@@ -68,7 +68,7 @@
 #define SCL_DETECT_PIN 7
 
 // Input pin for "READER RUN +" signal from PDP-11/05 (F/06 on the SCL connector).
-#define READER_RUN_PIN 3
+#define READER_RUN_PIN 14
 
 // Activity LED pin.
 #define ACTIVITY_LED_PIN PICO_DEFAULT_LED_PIN
@@ -128,16 +128,29 @@ int main()
     gpio_set_inover(SCL_DETECT_PIN, GPIO_OVERRIDE_INVERT);
     gpio_pull_up(SCL_DETECT_PIN);
 
+    // Initialize the READER_RUN input pin
+    gpio_init(READER_RUN_PIN);
+    gpio_set_dir(READER_RUN_PIN, GPIO_IN);
+    gpio_set_inover(READER_RUN_PIN, GPIO_OVERRIDE_INVERT);
+    gpio_pull_up(READER_RUN_PIN);
+
     // Initialize SCL and auxilary UARTs
     InitUARTs();
 
     // Setup SCL clock generator
     InitSCLClock();
 
+    bool lastReaderRun = false;
+
     // Main loop...
     while (true) {
         bool active = false;
         char ch = 0;
+
+        if (gpio_get(READER_RUN_PIN) != lastReaderRun) {
+            lastReaderRun = !lastReaderRun;
+            stdio_printf("READER RUN: %s\r\n", lastReaderRun ? "true" : "false");
+        }
 
         // Detect when the console adapter is connected/disconnected from the 
         // PDP-11 SCL port.
