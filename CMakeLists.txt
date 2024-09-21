@@ -6,6 +6,10 @@ include($ENV{PICO_SDK_PATH}/pico_sdk_init.cmake)
 # set the location of the picotool command
 set(picotool_DIR $ENV{PICOTOOL_PATH})
 
+# Limit firmware size to half of overall flash size; 
+# remainder is used for file storage.
+set(PICO_FLASH_SIZE_BYTES "1 * 1024 * 1024")
+
 project(pdp1105-console-adapter)
 
 # initialize the Raspberry Pi Pico SDK
