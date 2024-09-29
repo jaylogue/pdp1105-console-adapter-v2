@@ -37,15 +37,15 @@
 // connected to the PDP-11's "SERIAL OUT (TTL)" signal (D/04 on the SCL connector),
 // while the TX pin should be connected to the "SERIAL IN (TTL)" signal (RR/36).
 #define SCL_UART uart0
-#define SCL_UART_TX_PIN 16
-#define SCL_UART_RX_PIN 17
+#define SCL_UART_TX_PIN 12
+#define SCL_UART_RX_PIN 13
 
 // UART for speaking to an auxiliary terminal (if present).  This allows an serial
 // terminal to interact with the PDP-11/05 console in parallel to the host USB
 // serial device. Comment out AUX_TERM_UART to disable support for an auxiliary terminal.
 #define AUX_TERM_UART uart1
-#define AUX_TERM_UART_TX_PIN 4
-#define AUX_TERM_UART_RX_PIN 5
+#define AUX_TERM_UART_TX_PIN 8
+#define AUX_TERM_UART_RX_PIN 9
 
 // Minimum, maximum and default baud rates
 //
@@ -58,17 +58,17 @@
 // This pin is used to clock the SCL UART inside the PDP-11, allowing the console adapter
 // to control the baud rate.  For this to work, the PDP-11's built-in baud rate generator
 // must be disabled by grounding the "CLK DISAB (TTL)" line (N/12 on the SCL connector).
-#define SCL_CLOCK_PIN 18
+#define SCL_CLOCK_PIN 6
 
 // SCL detect pin.  This pin is used to detect whether the console adapter is connected
 // to the PDP-11/05 SCL port.  The pin is connected to pin A/01 on the SCL connector,
 // which is a ground pin coming from the PDP-11.  When the console adapter is connected,
 // the line is pulled low by the PDP-11; when the console adapter is not connected,
 // an internal pull-up resistor pulls the line high.
-#define SCL_DETECT_PIN 7
+#define SCL_DETECT_PIN 2
 
 // Input pin for "READER RUN +" signal from PDP-11/05 (F/06 on the SCL connector).
-#define READER_RUN_PIN 14
+#define READER_RUN_PIN 3
 
 // Activity LED pin.
 #define ACTIVITY_LED_PIN PICO_DEFAULT_LED_PIN
