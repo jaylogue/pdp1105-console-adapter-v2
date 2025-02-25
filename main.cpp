@@ -282,7 +282,7 @@ void HandleSCLConnectionChange(void)
     // The PDP-11/05 SCL port expects the SERIAL IN (TTL) signal (pin RR/36)
     // to use inverted signaling (i.e. 0V = MARK, +V = SPACE).  However,
     // when the console adapter is not connected to the SCL port, it is
-    // convenient to use normal signaling to that a loopback test can be
+    // convenient to use normal signaling so that a loopback test can be
     // performed by jumpering pins RR/36 and D/04 on SCL connector.
     gpio_set_outover(SCL_UART_TX_PIN, 
                      sSCLConnected ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
