@@ -30,6 +30,7 @@
 #include "tusb.h"
 
 #include "ConsoleAdapter.h"
+#include "KeySeqMatcher.h"
 
 
 // ================================================================================
@@ -42,6 +43,7 @@ uint GlobalState::DataBits = 8;
 uint GlobalState::StopBits = 1;
 uart_parity_t GlobalState::Parity = UART_PARITY_NONE;
 bool GlobalState::SCLConnected;
+bool GlobalState::Active;
 
 // ================================================================================
 // LOCAL STATE
@@ -61,7 +63,7 @@ static void InitSCLClock(void);
 static void ConfigSCLClock(void);
 static void HandleSCLConnectionChange(void);
 static void HandleSerialConfigChange(void);
-static void UpdateActivityLED(bool activity);
+static void UpdateActivityLED(void);
 
 int main()
 {
@@ -96,6 +98,9 @@ int main()
 
     bool lastReaderRun = false;
 
+    // Start off in Terminal mode
+    TerminalMode_Start();
+
     // Main loop...
     while (true) {
         char ch = 0;
@@ -109,7 +114,7 @@ int main()
 
         // Detect when the console adapter is connected/disconnected from the 
         // PDP-11 SCL port.
-        if (gpio_get(SCL_DETECT_PIN) != sSCLConnected) {
+        if (gpio_get(SCL_DETECT_PIN) != GlobalState::SCLConnected) {
             HandleSCLConnectionChange();
             GlobalState::Active = true;
         }
@@ -119,7 +124,7 @@ int main()
             HandleSerialConfigChange();
             GlobalState::Active = true;
         }
- 
+
         switch (GlobalState::SystemState)
         {
         case SystemState::TerminalMode:
@@ -132,9 +137,9 @@ int main()
         case SystemState::LoadFileMode_PaperTapeReader:
             LoadFileMode_ProcessIO();
             break;
-        case SystemState::TransferFileMode_Monitor:
-        case SystemState::TransferFileMode_PaperTapeReader:
-            TransferFileMode_ProcessIO();
+        case SystemState::UploadFileMode_Monitor:
+        case SystemState::UploadFileMode_PaperTapeReader:
+            UploadFileMode_ProcessIO();
             break;
         }
 
@@ -146,14 +151,14 @@ int main()
 void InitUARTs(void)
 {
     // Setup the SCL UART
-    uart_init(SCL_UART, sBaudRate);
+    uart_init(SCL_UART, GlobalState::BaudRate);
     uart_set_fifo_enabled(SCL_UART, true);
     gpio_set_function(SCL_UART_RX_PIN, UART_FUNCSEL_NUM(SCL_UART, SCL_UART_RX_PIN));
     gpio_set_function(SCL_UART_TX_PIN, UART_FUNCSEL_NUM(SCL_UART, SCL_UART_TX_PIN));
     
     // Setup the auxilairy terminal UART
 #if defined(AUX_TERM_UART)
-    uart_init(AUX_TERM_UART, sBaudRate);
+    uart_init(AUX_TERM_UART, GlobalState::BaudRate);
     uart_set_fifo_enabled(AUX_TERM_UART, true);
     gpio_set_function(AUX_TERM_UART_RX_PIN, UART_FUNCSEL_NUM(AUX_TERM_UART, AUX_TERM_UART_RX_PIN));
     gpio_set_function(AUX_TERM_UART_TX_PIN, UART_FUNCSEL_NUM(AUX_TERM_UART, AUX_TERM_UART_TX_PIN));
@@ -166,13 +171,13 @@ void InitUARTs(void)
 void ConfigUARTs(void)
 {
     // Set the baud rate and format for the SCL UART
-    uart_set_baudrate(SCL_UART, sBaudRate);
-    uart_set_format(SCL_UART, sDataBits, sStopBits, sParity);
+    uart_set_baudrate(SCL_UART, GlobalState::BaudRate);
+    uart_set_format(SCL_UART, GlobalState::DataBits, GlobalState::StopBits, GlobalState::Parity);
 
     // Set the baud rate and format for the auxiliary terminal UART
 #if defined(AUX_TERM_UART)
-    uart_set_baudrate(AUX_TERM_UART, sBaudRate);
-    uart_set_format(AUX_TERM_UART, sDataBits, sStopBits, sParity);
+    uart_set_baudrate(AUX_TERM_UART, GlobalState::BaudRate);
+    uart_set_format(AUX_TERM_UART, GlobalState::DataBits, GlobalState::StopBits, GlobalState::Parity);
 #endif
 }
 
@@ -197,7 +202,7 @@ void InitSCLClock(void)
 void ConfigSCLClock(void)
 {
     // Compute the SCL clock rate from the configured baud rate.
-    uint32_t sclClockRate = sBaudRate * 16;
+    uint32_t sclClockRate = GlobalState::BaudRate * 16;
 
     // Compute the divisor needed to produce the SCL clock from the
     // system's peripheral clock.
@@ -218,7 +223,7 @@ void ConfigSCLClock(void)
 
 void HandleSCLConnectionChange(void)
 {
-    sSCLConnected = gpio_get(SCL_DETECT_PIN);
+    GlobalState::SCLConnected = gpio_get(SCL_DETECT_PIN);
 
     // While the console adapter is connected to the PDP-11's SCL port,
     // configure the SCL UART TX pin to output serial data in inverted format 
@@ -231,7 +236,7 @@ void HandleSCLConnectionChange(void)
     // convenient to use normal signaling so that a loopback test can be
     // performed by jumpering pins RR/36 and D/04 on SCL connector.
     gpio_set_outover(SCL_UART_TX_PIN, 
-                     sSCLConnected ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
+                     GlobalState::SCLConnected ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
 }
 
 void HandleSerialConfigChange(void)
@@ -247,7 +252,7 @@ void HandleSerialConfigChange(void)
     // Adjust the baud rate if the proposed value is within an acceptable range.
     if (usbSerialConfig.bit_rate >= MIN_BAUD_RATE &&
         usbSerialConfig.bit_rate <= MAX_BAUD_RATE) {
-        sBaudRate = usbSerialConfig.bit_rate;
+        GlobalState::BaudRate = usbSerialConfig.bit_rate;
     }
 
     // Adjust the serial format if the proposed format is acceptable.
@@ -260,23 +265,23 @@ void HandleSerialConfigChange(void)
     if (usbSerialConfig.data_bits == 8 &&
         usbSerialConfig.parity == CDC_LINE_CODING_PARITY_NONE &&
         usbSerialConfig.stop_bits == CDC_LINE_CODING_STOP_BITS_1) {
-        sDataBits = 8;
-        sParity = UART_PARITY_NONE;
-        sStopBits = 1;
+        GlobalState::DataBits = 8;
+        GlobalState::Parity = UART_PARITY_NONE;
+        GlobalState::StopBits = 1;
     }
     else if (usbSerialConfig.data_bits == 7 && 
              usbSerialConfig.parity == CDC_LINE_CODING_PARITY_EVEN &&
              usbSerialConfig.stop_bits == CDC_LINE_CODING_STOP_BITS_1) {
-        sDataBits = 7;
-        sParity = UART_PARITY_EVEN;
-        sStopBits = 1;
+        GlobalState::DataBits = 7;
+        GlobalState::Parity = UART_PARITY_EVEN;
+        GlobalState::StopBits = 1;
     }
     else if (usbSerialConfig.data_bits == 7 && 
              usbSerialConfig.parity == CDC_LINE_CODING_PARITY_ODD &&
              usbSerialConfig.stop_bits == CDC_LINE_CODING_STOP_BITS_1) {
-        sDataBits = 7;
-        sParity = UART_PARITY_ODD;
-        sStopBits = 1;
+        GlobalState::DataBits = 7;
+        GlobalState::Parity = UART_PARITY_ODD;
+        GlobalState::StopBits = 1;
     }
 
     // Wait for the UART transmission queues to empty.
@@ -287,19 +292,28 @@ void HandleSerialConfigChange(void)
     ConfigUARTs();
     ConfigSCLClock();
 
+    switch (GlobalState::SystemState)
+    {
+    case SystemState::TerminalMode:
+        TerminalMode_HandleSerialConfigChange();
+        break;
+    default:
+        break;
+    }
+
 #if 0
     printf("Serial config changed: %u %u-%c-%u\r\n",
-           sBaudRate, sDataBits, 
-           (sParity == UART_PARITY_NONE)
+           GlobalState::BaudRate, GlobalState::DataBits, 
+           (GlobalState::Parity == UART_PARITY_NONE)
                 ? 'N'
-                : (sParity == UART_PARITY_EVEN)
+                : (GlobalState::Parity == UART_PARITY_EVEN)
                     ? 'E'
                     : 'O',
-           sStopBits);
+           GlobalState::StopBits);
 #endif
 }
 
-void UpdateActivityLED(bool activity)
+void UpdateActivityLED(void)
 {
     absolute_time_t now = get_absolute_time();
     bool ledState = gpio_get(ACTIVITY_LED_PIN);
@@ -307,7 +321,7 @@ void UpdateActivityLED(bool activity)
 
     // If there is activity, and activity LED is currently ON and has been for
     // the minimum time, turn it OFF to signal activity to the user.
-    if (activity) {
+    if (GlobalState::Active) {
         if (ledState && ledStateDur >= STATUS_LED_MIN_STATE_TIME_US) {
             gpio_put(ACTIVITY_LED_PIN, false);
             sLastLEDUpdateTime = now;

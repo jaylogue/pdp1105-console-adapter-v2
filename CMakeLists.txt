@@ -7,7 +7,7 @@ include($ENV{PICO_SDK_PATH}/pico_sdk_init.cmake)
 set(picotool_DIR $ENV{PICOTOOL_PATH})
 
 # Limit firmware size to half of overall flash size; 
-# remainder is used for file storage.
+# remainder will be used for internal file storage.
 set(PICO_FLASH_SIZE_BYTES "1 * 1024 * 1024")
 
 project(pdp1105-console-adapter)
@@ -17,6 +17,11 @@ pico_sdk_init()
 
 add_executable(pdp1105-console-adapter
     main.cpp
+    TerminalMode.cpp
+    MenuMode.cpp
+    LoadFileMode.cpp
+    UploadFileMode.cpp
+    KeySeqMatcher.cpp
 )
 
 target_link_libraries(pdp1105-console-adapter 

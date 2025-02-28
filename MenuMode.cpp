@@ -9,6 +9,7 @@
 #include "tusb.h"
 
 #include "ConsoleAdapter.h"
+#include "KeySeqMatcher.h"
 
 enum MenuState : uint
 {
@@ -25,8 +26,8 @@ void MenuMode_Start(void)
         stdio_printf("*** MAIN MENU ***\r\n"
                      "  l - Load built-in file via M92x3 monitor\r\n"
                      "  L - Load built-in file via paper tape reader\r\n"
-                     "  t - XMODEM download file via M92x3 monitor\r\n"
-                     "  T - XMODEM download file via paper tape reader\r\n"
+                     "  u - XMODEM upload file via M92x3 monitor\r\n"
+                     "  U - XMODEM upload file via paper tape reader\r\n"
                      "  q - Return to terminal mode\r\n"
                      );
 
@@ -49,8 +50,11 @@ void MenuMode_ProcessIO(void)
     case MenuState::MainMenu:
         MenuOption = ch;
         switch (ch) {
-        case 'l':
-            MenuState = SelectFile:
+        case 'q':
+            TerminalMode_Start();
+            break;
+        default:
+            break;
         }
     }
 }
