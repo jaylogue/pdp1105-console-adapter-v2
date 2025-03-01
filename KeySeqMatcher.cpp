@@ -82,7 +82,7 @@ int KeySeqMatcher::Match(char ch, const char * & queuedChars, size_t & numQueued
  */
 bool KeySeqMatcher::CheckTimeout(const char * & queuedChars, size_t & numQueuedChars)
 {
-    if (mCurMatchLen > 0 && time_us_64() >= (mLastMatchTimeUS + mTimeoutUS)) {
+    if (mCurMatchLen > 0 && mTimeoutUS != 0 && time_us_64() >= (mLastMatchTimeUS + mTimeoutUS)) {
         queuedChars = mKeySeqList[mCurKeySeq];
         numQueuedChars = mCurMatchLen;
         Reset();

@@ -30,7 +30,6 @@
 #include "tusb.h"
 
 #include "ConsoleAdapter.h"
-#include "KeySeqMatcher.h"
 
 
 // ================================================================================
@@ -125,6 +124,7 @@ int main()
             GlobalState::Active = true;
         }
 
+        // Perform I/O processing based on the current mode.
         switch (GlobalState::SystemState)
         {
         case SystemState::TerminalMode:
@@ -291,15 +291,6 @@ void HandleSerialConfigChange(void)
     // configuration.
     ConfigUARTs();
     ConfigSCLClock();
-
-    switch (GlobalState::SystemState)
-    {
-    case SystemState::TerminalMode:
-        TerminalMode_HandleSerialConfigChange();
-        break;
-    default:
-        break;
-    }
 
 #if 0
     printf("Serial config changed: %u %u-%c-%u\r\n",

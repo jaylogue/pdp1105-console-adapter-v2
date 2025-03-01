@@ -21,7 +21,6 @@ add_executable(pdp1105-console-adapter
     MenuMode.cpp
     LoadFileMode.cpp
     UploadFileMode.cpp
-    KeySeqMatcher.cpp
 )
 
 target_link_libraries(pdp1105-console-adapter 

@@ -59,6 +59,6 @@
 #define STATUS_LED_MIN_STATE_TIME_MS 30
 
 // Input character to invoke the adapter menu while in terminal mode
-#define MENU_KEY '\034'
+#define MENU_KEY '\036' // Ctrl+^
 
 #endif // CONFIG_H
