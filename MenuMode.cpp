@@ -46,6 +46,9 @@ void MenuMode_ProcessIO(void)
         case 'q':
             TerminalMode_Start();
             break;
+        case 'l':
+            LoadFileMode_Start();
+            break;
         default:
             break;
         }

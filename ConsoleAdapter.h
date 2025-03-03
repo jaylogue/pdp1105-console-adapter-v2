@@ -44,6 +44,7 @@ extern void TerminalMode_Start(void);
 extern void TerminalMode_ProcessIO(void);
 extern void MenuMode_Start(void);
 extern void MenuMode_ProcessIO(void);
+extern void LoadFileMode_Start(void);
 extern void LoadFileMode_ProcessIO(void);
 extern void UploadFileMode_ProcessIO(void);
 
