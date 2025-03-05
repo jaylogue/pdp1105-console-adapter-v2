@@ -16,7 +16,6 @@ extern void WriteSCL(const char * str);
 #endif // UNIT_TEST
 
 #include "M93xxController.h"
-#include "MemFile.h"
 
 void M93xxController::Reset(void)
 {
@@ -155,7 +154,7 @@ void M93xxController::SendCR(void)
     WriteSCL('\r');
 }
 
-void M93xxController::LoadFromFile(MemFile *f)
+void M93xxController::Load(DataSource *s)
 {
     uint16_t data, addr;
 
@@ -164,9 +163,9 @@ void M93xxController::LoadFromFile(MemFile *f)
         return;
     }
 
-    // Get the next word to be loaded from the input file; if at EOF
+    // Get the next word to be loaded from the data source; if at EOF
     // or if the next word is not ready yet, do nothing
-    if (!f->GetWord(data, addr)) {
+    if (!s->GetWord(data, addr)) {
         return;
     }
 
@@ -182,8 +181,8 @@ void M93xxController::LoadFromFile(MemFile *f)
     // the target address
     Deposit(data);
 
-    // Advance the input file to the next word
-    f->Advance();
+    // Advance the data source to the next word
+    s->Advance();
 }
 
 #ifdef UNIT_TEST

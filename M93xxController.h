@@ -3,13 +3,13 @@
 
 #include <stdint.h>
 
-class MemFile;
-
 /** Provides an API for interacting with a PDP-11 M9301/M9312 console emulator
  */
 class M93xxController final
 {
 public:
+    class DataSource;
+
     M93xxController();
     ~M93xxController() = default;
 
@@ -22,7 +22,7 @@ public:
     void SendCR(void);
     void Reset(void);
     char LastCommand(void) const;
-    void LoadFromFile(MemFile * f);
+    void Load(DataSource * s);
     uint16_t LastAddress(void) const;
     uint16_t LastExamineValue(void) const;
     uint16_t NextDepositAddress(void) const;
@@ -43,6 +43,16 @@ private:
     uint16_t mLastVal;
     int mDigitsParsed;
 };
+
+class M93xxController::DataSource
+{
+public:
+    virtual ~DataSource() = default;
+    virtual bool GetWord(uint16_t &data, uint16_t &addr) = 0;
+    virtual void Advance(void) = 0;
+    virtual bool AtEOF(void) = 0;
+};
+
 
 inline
 M93xxController::M93xxController()
