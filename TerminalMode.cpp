@@ -1,41 +1,49 @@
-
-#include <stdio.h>
-#include <stdint.h>
-
 #include "ConsoleAdapter.h"
 
-void TerminalMode_Start(void)
-{
-    if (GlobalState::SystemState != SystemState::TerminalMode) {
-        WriteHostAux("*** TERMINAL MODE ***\r\n");
-        GlobalState::SystemState = SystemState::TerminalMode;
-    }
-}
-
-void TerminalMode_ProcessIO(void)
+void TerminalMode(void)
 {
     char ch;
 
-    // Process characters received from either the USB host or the auxiliary terminal.
-    if (CanWriteSCL() && TryReadHostAux(ch)) {
+    while (true) {
 
-        GlobalState::Active = true;
+        // Update the connection status of the SCL port
+        SCLPort::CheckConnected();
 
-        // If the menu key was pressed enter menu mode
-        if (ch == MENU_KEY) {
-            MenuMode_Start();
-            return;
+        // Handle requests from the USB host to change the serial configuration.
+        if (HostPort::SerialConfigChanged()) {
+            SerialConfig serialConfig;
+            HostPort::GetSerialConfig(serialConfig);
+            SCLPort::SetConfig(serialConfig);
+            AuxPort::SetConfig(serialConfig);
         }
 
-        // Otherwise forward the character to the SCL port.
-        WriteSCL(ch);
-    }
+        // If the PDP-11 has triggered the READER RUN line, and there is a paper
+        // tape file attached, deliver a single byte from the paper tape file to
+        // the SCL port.
+        if (SCLPort::ReaderRunRequested() && PaperTapeReader::TryRead(ch)) {
+            SCLPort::Write(ch);
+        }
 
-    // Forward characters received from the PDP-11 SCL port to both the Host and Aux terminals
-    if (TryReadSCL(ch)) {
+        // Process characters received from either the USB host or the auxiliary terminal.
+        if (SCLPort::CanWrite() && TryReadHostAuxPorts(ch)) {
 
-        GlobalState::Active = true;
+            // If the menu key was pressed enter menu mode
+            if (ch == MENU_KEY) {
+                MenuMode();
+            }
 
-        WriteHostAux(ch);
+            // Otherwise forward the character to the SCL port.
+            else {
+                SCLPort::Write(ch);
+            }
+        }
+
+        // Forward characters received from the SCL port to both the Host and Aux terminals
+        if (SCLPort::TryRead(ch)) {
+            WriteHostAuxPorts(ch);
+        }
+
+        // Update the state of the activity LEDs
+        ActivityLED::UpdateState();
     }
 }

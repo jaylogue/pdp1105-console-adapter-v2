@@ -10,8 +10,10 @@
 
 #else // UNIT_TEST
 
-extern void WriteSCL(char ch);
-extern void WriteSCL(const char * str);
+namespace SCLPort {
+extern void Write(char ch);
+extern void Write(const char * str);
+}
 
 #endif // UNIT_TEST
 
@@ -118,7 +120,7 @@ void M93xxController::SetAddress(uint16_t addr)
     if (mState = kReadyForCommand) {
         char loadCmd[10];
         snprintf(loadCmd, sizeof(loadCmd), "L %06" PRIo16 "\r", addr);
-        WriteSCL(loadCmd);
+        SCLPort::Write(loadCmd);
         mState = kWaitingForResponse;
     }
 }
@@ -128,7 +130,7 @@ void M93xxController::Deposit(uint16_t val)
     if (mState = kReadyForCommand) {
         char depositCmd[10];
         snprintf(depositCmd, sizeof(depositCmd), "D %06" PRIo16 "\r", val);
-        WriteSCL(depositCmd);
+        SCLPort::Write(depositCmd);
         mState = kWaitingForResponse;
     }
 }
@@ -136,7 +138,7 @@ void M93xxController::Deposit(uint16_t val)
 void M93xxController::Examine(void)
 {
     if (mState = kReadyForCommand) {
-        WriteSCL("E ");
+        SCLPort::Write("E ");
         mState = kWaitingForResponse;
     }
 }
@@ -144,45 +146,14 @@ void M93xxController::Examine(void)
 void M93xxController::Start(void)
 {
     if (mState = kReadyForCommand) {
-        WriteSCL("S\r");
+        SCLPort::Write("S\r");
         mState = kWaitingForResponse;
     }
 }
 
 void M93xxController::SendCR(void)
 {
-    WriteSCL('\r');
-}
-
-void M93xxController::Load(DataSource *s)
-{
-    uint16_t data, addr;
-
-    // Wait until the M9301/M9312 is ready for another command
-    if (!IsReadyForCommand()) {
-        return;
-    }
-
-    // Get the next word to be loaded from the data source; if at EOF
-    // or if the next word is not ready yet, do nothing
-    if (!s->GetWord(data, addr)) {
-        return;
-    }
-
-    // If the next deposit address is not the target address for the
-    // file word, issue a set address (L) command and wait for it to
-    // complete
-    if (NextDepositAddress() != addr) {
-        SetAddress(addr);
-        return;
-    }
-
-    // Issue a deposit command (D) to load the word into memory at
-    // the target address
-    Deposit(data);
-
-    // Advance the data source to the next word
-    s->Advance();
+    SCLPort::Write('\r');
 }
 
 #ifdef UNIT_TEST
@@ -192,8 +163,10 @@ void M93xxController::Load(DataSource *s)
 
 std::string sSCLOutput;
 
-void WriteSCL(char ch)               { sSCLOutput += ch; }
-void WriteSCL(const char * str)      { sSCLOutput += str; }
+namespace SCLPort {
+void Write(char ch)               { sSCLOutput += ch; }
+void Write(const char * str)      { sSCLOutput += str; }
+}
 
 void DriveController(M93xxController &c, const char * &p)
 {

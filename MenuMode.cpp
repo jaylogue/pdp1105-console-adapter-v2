@@ -1,54 +1,36 @@
-
-#include <stdio.h>
-#include <stdint.h>
-
 #include "ConsoleAdapter.h"
 
-enum MenuState : uint
-{
-    MainMenu,
-    SelectFile
-};
-
-static enum MenuState MenuState;
-static char MenuOption;
-
-void MenuMode_Start(void)
-{
-    if (GlobalState::SystemState != SystemState::MenuMode) {
-        WriteHostAux("*** MENU ***\r\n"
-                     "  l - Load built-in file using M92x3 monitor\r\n"
-                     "  L - Load built-in file using paper tape reader\r\n"
-                     "  u - Upload file using M92x3 monitor\r\n"
-                     "  U - Upload file using paper tape reader\r\n"
-                     "  q - Return to terminal mode\r\n"
-                     );
-
-        GlobalState::SystemState = SystemState::MenuMode;
-        MenuState = MenuState::MainMenu;
-    }
-}
-
-void MenuMode_ProcessIO(void)
+void MenuMode(void)
 {
     char ch;
 
-    if (!TryReadHostAux(ch)) {
-        return;
-    }
+    while (true) {
+        WriteHostAuxPorts("*** MENU:\r\n"
+                          "m      - Mount paper tape\r\n"
+                          "u      - Unmount paper tape\r\n"
+                          "l      - Load data using M93xx console\r\n"
+                          "x      - Upload file via XMODEM\r\n"
+                          "Ctrl+^ - Send Ctrl+^ character\r\n"
+                          "q      - Return to terminal mode\r\n"
+                          ": ");
 
-    GlobalState::Active = true;
+        while (!TryReadHostAuxPorts(ch)) {
+        }
 
-    switch (MenuState) {
-    case MenuState::MainMenu:
-        MenuOption = ch;
+        if (ch != MENU_KEY) {
+            WriteHostAuxPorts(ch);
+            WriteHostAuxPorts("\r\n");
+        }
+
         switch (ch) {
-        case 'q':
-            TerminalMode_Start();
-            break;
+        case MENU_KEY:
+            SCLPort::Write(MENU_KEY);
+            return;
         case 'l':
-            LoadFileMode_Start();
-            break;
+            TestLoadDataMode();
+            return;
+        case 'q':
+            return;
         default:
             break;
         }

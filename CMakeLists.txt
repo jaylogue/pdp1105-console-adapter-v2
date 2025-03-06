@@ -19,9 +19,14 @@ add_executable(pdp1105-console-adapter
     main.cpp
     TerminalMode.cpp
     MenuMode.cpp
-    LoadFileMode.cpp
-    UploadFileMode.cpp
+    HostPort.cpp
+    SCLPort.cpp
+    AuxPort.cpp
+    PaperTapeReader.cpp
+    LoadDataMode.cpp
     M93xxController.cpp
+    ActivityLED.cpp
+    Utils.cpp
 )
 
 target_link_libraries(pdp1105-console-adapter 
