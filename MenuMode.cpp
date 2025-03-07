@@ -1,4 +1,7 @@
 #include "ConsoleAdapter.h"
+#include "BootstrapLoaderSource.h"
+
+static void TestLoadDataMode(void);
 
 void MenuMode(void)
 {
@@ -35,4 +38,11 @@ void MenuMode(void)
             break;
         }
     }
+}
+
+void TestLoadDataMode(void)
+{
+    BootstrapLoaderSource bsLoader(017744);
+
+    LoadDataMode(&bsLoader);
 }

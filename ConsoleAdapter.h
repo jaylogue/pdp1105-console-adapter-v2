@@ -23,7 +23,6 @@ class LoadDataSource;
 extern void TerminalMode(void);
 extern void MenuMode(void);
 extern void LoadDataMode(LoadDataSource * dataSrc);
-extern void TestLoadDataMode(void);
 
 
 // ================================================================================
