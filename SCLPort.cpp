@@ -4,13 +4,15 @@
 #include "hardware/pwm.h"
 #include "hardware/uart.h"
 
+SCLPort gSCLPort;
+
 static bool sLastReaderRun;
 
 static void ConfigSCLClock(uint32_t bitRate);
 
 void SCLPort::Init(void)
 {
-    const SerialConfig kDefaultConfig = { 1200, 8, 1, SerialConfig::PARITY_NONE };
+    const SerialConfig kDefaultConfig = { DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
 
     // Setup the SCL UART
     uart_init(SCL_UART, kDefaultConfig.BitRate);
@@ -53,45 +55,6 @@ void SCLPort::SetConfig(const SerialConfig& serialConfig)
 
     // The SCL clock based on the new serial configuration.
     ConfigSCLClock(serialConfig.BitRate);
-}
-
-char SCLPort::Read(void)
-{
-    char ch = uart_getc(SCL_UART);
-    ActivityLED::TxActive();
-    return ch;
-}
-
-bool SCLPort::TryRead(char& ch)
-{
-    if (uart_is_readable(SCL_UART)) {
-        ch = uart_getc(SCL_UART);
-        ActivityLED::TxActive();
-        return true;
-    }
-    return false;
-}
-
-void SCLPort::Write(char ch)
-{
-    uart_putc(SCL_UART, ch);
-    ActivityLED::RxActive();
-}
-
-void SCLPort::Write(const char* str)
-{
-    uart_puts(SCL_UART, str);
-    ActivityLED::RxActive();
-}
-
-void SCLPort::Flush(void)
-{
-    uart_tx_wait_blocking(SCL_UART);
-}
-
-bool SCLPort::CanWrite(void)
-{
-    return uart_is_writable(SCL_UART);
 }
 
 bool SCLPort::CheckConnected(void)

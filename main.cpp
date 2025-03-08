@@ -24,13 +24,18 @@
 int main()
 {
     // Initialize the host interface
-    HostPort::Init();
+    gHostPort.Init();
 
     // Initialize the SCL port
-    SCLPort::Init();
+    gSCLPort.Init();
 
+#if defined(AUX_TERM_UART)
     // Initialize the Aux Terminal port
-    AuxPort::Init();
+    gAuxPort.Init();
+#endif
+
+    // Initialize access to built-in files.
+    BuiltInFileSet::Init();
 
     // Initialize the activity LEDs
     ActivityLED::Init();

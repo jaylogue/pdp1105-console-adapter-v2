@@ -120,7 +120,7 @@ void M93xxController::SetAddress(uint16_t addr)
     if (mState = kReadyForCommand) {
         char loadCmd[10];
         snprintf(loadCmd, sizeof(loadCmd), "L %06" PRIo16 "\r", addr);
-        SCLPort::Write(loadCmd);
+        gSCLPort.Write(loadCmd);
         mState = kWaitingForResponse;
     }
 }
@@ -130,7 +130,7 @@ void M93xxController::Deposit(uint16_t val)
     if (mState = kReadyForCommand) {
         char depositCmd[10];
         snprintf(depositCmd, sizeof(depositCmd), "D %06" PRIo16 "\r", val);
-        SCLPort::Write(depositCmd);
+        gSCLPort.Write(depositCmd);
         mState = kWaitingForResponse;
     }
 }
@@ -138,7 +138,7 @@ void M93xxController::Deposit(uint16_t val)
 void M93xxController::Examine(void)
 {
     if (mState = kReadyForCommand) {
-        SCLPort::Write("E ");
+        gSCLPort.Write("E ");
         mState = kWaitingForResponse;
     }
 }
@@ -146,14 +146,14 @@ void M93xxController::Examine(void)
 void M93xxController::Start(void)
 {
     if (mState = kReadyForCommand) {
-        SCLPort::Write("S\r");
+        gSCLPort.Write("S\r");
         mState = kWaitingForResponse;
     }
 }
 
 void M93xxController::SendCR(void)
 {
-    SCLPort::Write('\r');
+    gSCLPort.Write('\r');
 }
 
 #ifdef UNIT_TEST

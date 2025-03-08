@@ -49,3 +49,8 @@ bool BootstrapLoaderSource::AtEOF(void)
 {
     return mCurWord >= sBootstrapLoaderLen;
 }
+
+uint16_t BootstrapLoaderSource::GetStartAddress(void)
+{
+    return mLoadAddr;
+}

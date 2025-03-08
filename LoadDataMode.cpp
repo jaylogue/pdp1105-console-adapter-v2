@@ -2,11 +2,12 @@
 #include "ConsoleAdapter.h"
 #include "M93xxController.h"
 
-void LoadDataMode(LoadDataSource * dataSrc)
+void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
 {
     M93xxController m93xxCtr;
+    uint16_t startAddr = dataSrc.GetStartAddress();
 
-    WriteHostAuxPorts("*** LOAD DATA\r\n");
+    uiPort.Write("*** LOADING FILE ***\r\n");
 
     // Send a couple returns to get the M9301/M9312 console to issue a prompt
     m93xxCtr.SendCR();
@@ -18,28 +19,40 @@ void LoadDataMode(LoadDataSource * dataSrc)
         char ch;
         uint16_t data, addr;
 
-        // Wait for a character from the M9301/M9312 console. While waiting,
-        // check for an interrupt character from the Host or Aux Terminal ports.
-        while (!SCLPort::TryRead(ch)) {
-            if (TryReadHostAuxPorts(ch) && ch == '\x03') {
-                WriteHostAuxPorts("*** LOAD DATA INTERRUPTED\r\n");
-                return;
-            }
+        // Update the state of the activity LEDs
+        ActivityLED::UpdateState();
+
+        // Update the connection status of the SCL port
+        gSCLPort.CheckConnected();
+
+        // Check for an interrupt character from the UI port.
+        if (uiPort.TryRead(ch) && ch == '\x03') {
+            uiPort.Write("*** INTERRUPTED ***\r\n");
+            break;
+        }
+
+        // Wait for a character from the M9301/M9312 console.
+        if (!gSCLPort.TryRead(ch)) {
+            continue;
         }
 
         // Process the character
         m93xxCtr.ProcessOutput(ch);
 
-        // If the last deposit command has been issued, and the M9301/M9312 has
-        // completed the command, exit load file mode.
-        if (dataSrc->AtEOF() && m93xxCtr.IsReadyForCommand()) {
-            WriteHostAuxPorts("*** LOAD DATA COMPLETE\r\n");
-            WriteHostAuxPorts(ch);
-            return;
+        // If all data has been loaded, and the M9301/M9312 is ready for another
+        // command, inform the user that we're loading the start address or the
+        // load command it complete.
+        if (dataSrc.AtEOF() && m93xxCtr.IsReadyForCommand()) {
+            if (startAddr != LoadDataSource::NO_ADDR) {
+                uiPort.Write("*** LOADING START ADDRESS ***\r\n");
+            }
+            else {
+                uiPort.Write("*** LOAD COMPLETE ***\r\n");
+            }
         }
 
         // Echo the character from the M9301/M9312 console so the user can see the
-        // commands as they are executed.
+        // prompts and commands as they are executed.
         WriteHostAuxPorts(ch);
 
         // Wait until the M9301/M9312 is finished processing the current command
@@ -47,9 +60,24 @@ void LoadDataMode(LoadDataSource * dataSrc)
             continue;
         }
 
+        // If the last deposit command has completed...
+        if (dataSrc.AtEOF()) {
+
+            // If a start address has been specified, issue a set address command for
+            // the address so the user start the program by simply typing 'S'.
+            if (startAddr != LoadDataSource::NO_ADDR) {
+                m93xxCtr.SetAddress(startAddr);
+                startAddr = LoadDataSource::NO_ADDR;
+                continue;
+            }
+
+            // Otherwise the loading process is complete
+            break;
+        }
+
         // Get the next word to be loaded from the data source; if the next word
         // is not ready yet, wait until it is.
-        if (!dataSrc->GetWord(data, addr)) {
+        if (!dataSrc.GetWord(data, addr)) {
             continue;
         }
 
@@ -66,6 +94,6 @@ void LoadDataMode(LoadDataSource * dataSrc)
         m93xxCtr.Deposit(data);
 
         // Advance the data source to the next word
-        dataSrc->Advance();
+        dataSrc.Advance();
     }
 }

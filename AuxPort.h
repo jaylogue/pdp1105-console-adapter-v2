@@ -1,21 +1,31 @@
 #ifndef AUX_PORT
 #define AUX_PORT
 
+#if defined(AUX_TERM_UART)
+
 struct SerialConfig;
 
-class AuxPort final
+class AuxPort final : public Port
 {
 public:
-    static void Init(void);
-    static void SetConfig(const SerialConfig& serialConfig);
-    static char Read(void);
-    static bool TryRead(char &ch);
-    static void Write(char ch);
-    static void Write(const char * str);
-    static void Flush(void);
+    AuxPort(void) = default;
+    virtual ~AuxPort(void) = default;
+
+    AuxPort(const AuxPort&) = delete;
+    AuxPort& operator=(const AuxPort&) = delete;
+
+    void Init(void);
+    void SetConfig(const SerialConfig& serialConfig);
+
+    virtual char Read(void);
+    virtual bool TryRead(char &ch);
+    virtual void Write(char ch);
+    virtual void Write(const char * str);
+    virtual void Flush(void);
+    virtual bool CanWrite(void);
 };
 
-#if defined(AUX_TERM_UART)
+extern AuxPort gAuxPort;
 
 inline char AuxPort::Read(void)
 {
@@ -42,15 +52,10 @@ inline void AuxPort::Flush(void)
     uart_tx_wait_blocking(AUX_TERM_UART);
 }
 
-#else // defined(AUX_TERM_UART)
-
-inline void AuxPort::Init(void)                     { }
-inline void AuxPort::SetConfig(const SerialConfig&) { }
-inline char AuxPort::Read(void)                     { return 0; }
-inline bool AuxPort::TryRead(char&)                 { return false; }
-inline void AuxPort::Write(char)                    { }
-inline void AuxPort::Write(const char*)             { }
-inline void AuxPort::Flush(void)                    { }
+inline bool AuxPort::CanWrite(void)
+{
+    return uart_is_writable(SCL_UART);
+}
 
 #endif // defined(AUX_TERM_UART)
 

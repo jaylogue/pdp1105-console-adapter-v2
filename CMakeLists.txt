@@ -26,8 +26,10 @@ add_executable(pdp1105-console-adapter
     LoadDataMode.cpp
     M93xxController.cpp
     BootstrapLoaderSource.cpp
+    BuiltInFileSet.cpp
     ActivityLED.cpp
     Utils.cpp
+    crc32.c
 )
 
 target_link_libraries(pdp1105-console-adapter 

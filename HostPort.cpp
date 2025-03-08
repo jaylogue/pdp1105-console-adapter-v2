@@ -1,6 +1,9 @@
 #include "ConsoleAdapter.h"
 
 #include "tusb.h"
+#include "HostPort.h"
+
+HostPort gHostPort;
 
 static SerialConfig sSerialConfig;
 static bool sSerialConfigChanged;
@@ -12,32 +15,8 @@ void HostPort::Init(void)
     stdio_usb_init();
     stdio_set_translate_crlf(&stdio_usb, false);
 
-    sSerialConfig = (SerialConfig){ 1200, 8, 1, SerialConfig::PARITY_NONE };
+    sSerialConfig = (SerialConfig){ DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
     sSerialConfigChanged = false;
-}
-
-char HostPort::Read(void)
-{
-    char ch = stdio_getchar();
-    return ch;
-}
-
-bool HostPort::TryRead(char& ch)
-{
-    if (stdio_get_until(&ch, 1, 0) == 1) {
-        return true;
-    }
-    return false;
-}
-
-void HostPort::Write(char ch)
-{
-    stdio_putchar_raw(ch);
-}
-
-void HostPort::Write(const char * str)
-{
-    stdio_put_string(str, strlen(str), false, false);
 }
 
 bool HostPort::SerialConfigChanged(void)

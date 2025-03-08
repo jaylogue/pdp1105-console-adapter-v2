@@ -1,5 +1,3 @@
-
-
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -26,7 +24,7 @@
 // The SCL UART in the PDP-11/05 (e.g. an AY-5-1013) supports up to 40000 baud.
 #define MIN_BAUD_RATE 110
 #define MAX_BAUD_RATE 38400
-#define DEFAULT_BAUD_RATE 9600
+#define DEFAULT_BAUD_RATE 1200
 
 // Output pin for the "CLK IN (TTL)" signal to the PDP-11/05 (T/16 on the SCL connector).
 // This pin is used to clock the SCL UART inside the PDP-11, allowing the console adapter
@@ -57,6 +55,9 @@
 
 // Minimum amount of time (in ms) that the status LED should remain either on or off.
 #define STATUS_LED_MIN_STATE_TIME_MS 30
+
+// Maximum file name length
+#define MAX_FILE_NAME_LEN 32
 
 // Input character to invoke the adapter menu while in terminal mode
 #define MENU_KEY '\036' // Ctrl+^

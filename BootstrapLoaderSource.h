@@ -11,6 +11,7 @@ public:
     virtual bool GetWord(uint16_t& data, uint16_t& addr);
     virtual void Advance(void);
     virtual bool AtEOF(void);
+    virtual uint16_t GetStartAddress(void);
 
     static bool IsValidLoadAddr(uint16_t addr);
 

@@ -3,16 +3,57 @@
 
 struct SerialConfig;
 
-class HostPort final
+class HostPort final : public Port
 {
 public:
-    static void Init(void);
-    static char Read(void);
-    static bool TryRead(char &ch);
-    static void Write(char ch);
-    static void Write(const char * str);
-    static bool SerialConfigChanged(void);
-    static void GetSerialConfig(SerialConfig& serialConfig);
+    HostPort(void) = default;
+    virtual ~HostPort(void) = default;
+
+    HostPort(const HostPort&) = delete;
+    HostPort& operator=(const HostPort&) = delete;
+
+    void Init(void);
+    bool SerialConfigChanged(void);
+    void GetSerialConfig(SerialConfig& serialConfig);
+
+    virtual char Read(void);
+    virtual bool TryRead(char &ch);
+    virtual void Write(char ch);
+    virtual void Write(const char * str);
+    virtual void Flush(void);
+    virtual bool CanWrite(void);
 };
+
+extern HostPort gHostPort;
+
+inline char HostPort::Read(void)
+{
+    return stdio_getchar();
+}
+
+inline bool HostPort::TryRead(char& ch)
+{
+    return stdio_get_until(&ch, 1, 0) == 1;
+}
+
+inline void HostPort::Write(char ch)
+{
+    stdio_putchar_raw(ch);
+}
+
+inline void HostPort::Write(const char * str)
+{
+    stdio_put_string(str, strlen(str), false, false);
+}
+
+inline void HostPort::Flush(void)
+{
+    stdio_flush();
+}
+
+inline bool HostPort::CanWrite(void)
+{
+    return true;
+}
 
 #endif // HOST_PORT_H
