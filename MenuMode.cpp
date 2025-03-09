@@ -7,10 +7,11 @@
 #include "BootstrapLoaderSource.h"
 
 static void MountPaperTape(Port& uiPort);
+static void PaperTapeStatus(Port& uiPort);
 static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection);
 static char GetMenuSelection(Port& uiPort, const char validSelections[]);
 static size_t SelectFile(Port& uiPort);
-static void TestLoadDataMode(Port& uiPort);
+static void LoadData(Port& uiPort);
 
 #define CTRL_C '\x03'
 
@@ -19,7 +20,7 @@ void MenuMode(Port& uiPort)
     uiPort.Write("MAIN MENU:\r\n"
                  "  m: Mount paper tape         l: Load data using M93xx console\r\n"
                  "  u: Unmount paper tape       x: Upload file via XMODEM\r\n"
-                 "  s: Paper tape status        c: Edit configuration\r\n"
+                 "  s: Paper tape status        S: Adapter settings\r\n"
                  "  q: Return to terminal mode  Ctrl+^: Send menu character\r\n");
 
     char sel = GetMenuSelection(uiPort, (const char[]){ 'm', 'u', 's', 'l', 'x', 'c', 'q', MENU_KEY, CTRL_C, 0 });
@@ -34,8 +35,11 @@ void MenuMode(Port& uiPort)
     case 'u':
         PaperTapeReader::Unmount();
         break;
+    case 's':
+        PaperTapeStatus(uiPort);
+        break;
     case 'l':
-        TestLoadDataMode(uiPort);
+        LoadData(uiPort);
         break;
     default:
         break;
@@ -48,7 +52,7 @@ void MountPaperTape(Port& uiPort)
         return BuiltInFileSet::IsValidFile(ch) || ch == CTRL_C;
     };
 
-    uiPort.Write("\r\nSELECT FILE:\r\n");
+    uiPort.Write("SELECT FILE:\r\n");
     BuiltInFileSet::ShowMenu(uiPort);
 
     char selectedFile = GetMenuSelection(uiPort, isValidSel);
@@ -59,6 +63,21 @@ void MountPaperTape(Port& uiPort)
         size_t fileLen;
         BuiltInFileSet::GetFile(selectedFile, fileName, fileData, fileLen);
         PaperTapeReader::Mount(fileName, fileData, fileLen);
+    }
+}
+
+void PaperTapeStatus(Port& uiPort)
+{
+    uiPort.Write("PAPER TAPE STATUS:");
+    if (PaperTapeReader::IsMounted()) {
+        uiPort.Printf("\r\n  Tape Name: %s\r\n  Position: %" PRIu32 "/%" PRIu32 " (%" PRIu32 "%%)\r\n", 
+                      PaperTapeReader::TapeName(),
+                      PaperTapeReader::TapePosition(),
+                      PaperTapeReader::TapeLength(),
+                      PaperTapeReader::TapePosition() * 100 / PaperTapeReader::TapeLength());
+    }
+    else {
+        uiPort.Write(" No tape mounted\r\n");
     }
 }
 
@@ -105,7 +124,7 @@ char GetMenuSelection(Port& uiPort, const char *validSelections)
     return GetMenuSelection(uiPort, isValidSelection);
 }
 
-void TestLoadDataMode(Port& uiPort)
+void LoadData(Port& uiPort)
 {
     BootstrapLoaderSource bsLoader(017744);
 
