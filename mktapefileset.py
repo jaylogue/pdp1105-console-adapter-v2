@@ -37,7 +37,7 @@ UF2_PAYLOAD_SIZE = 256  # Size of data payload in each block
 UF2_DATA_SIZE = 476  # Size of data field in UF2 block (must be padded to this size)
 UF2_FAMILY_ID_RP2040 = 0xE48BFF56  # Family ID for RP2040
 
-# Default base address (extracted from BuiltInFileSet.cpp)
+# Default base address (extracted from FileSet.cpp)
 DEFAULT_BASE_ADDR = 0x10100000  # XIP_BASE (0x10000000) + 1 * 1024 * 1024
 
 # RPi Pico flash page size in bytes
@@ -140,7 +140,10 @@ def buildFilesetImage(fileNames):
         # Pad to align the next header
         paddingSize = (HEADER_ALIGNMENT - (len(filesetImage) % HEADER_ALIGNMENT)) % HEADER_ALIGNMENT
         filesetImage += b'\0' * paddingSize
-    
+
+    # Write an empty file header to mark the end of the file set
+    filesetImage += b'\0' * HEADER_SIZE
+
     return filesetImage
 
 def writeUf2File(outputFilePath, filesetImage, baseAddr):

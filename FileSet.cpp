@@ -2,7 +2,7 @@
 #include <inttypes.h>
 
 #include "ConsoleAdapter.h"
-#include "BuiltInFileSet.h"
+#include "FileSet.h"
 #include "crc32.h"
 
 struct FileHeader
@@ -45,7 +45,7 @@ static inline size_t FileKeyIndex(char key)
     }
 }
 
-void BuiltInFileSet::Init(void)
+void FileSet::Init(void)
 {
     // Scan the file set in flash for valid files; for each file...
     for (auto file = sFileSetStart; sNumFiles < kMaxFiles && file->IsValid(); file = file->Next()) {
@@ -62,14 +62,16 @@ void BuiltInFileSet::Init(void)
     }
 }
 
-void BuiltInFileSet::ShowMenu(Port& uiPort)
+void FileSet::ShowMenu(Port& uiPort)
 {
     // Determine whether to use one or two columns
     bool useDoubleColumn = (sNumFiles > kMaxSingleColumnFiles);
     size_t rows = useDoubleColumn ? (sNumFiles + 1) / 2 : sNumFiles;
     char fileKey;
     
+    // For each row...
     for (size_t row = 0; row < rows; row++) {
+
         // Print first column item
         fileKey = FileKey(row);
         uiPort.Printf("  %c: %.*s", fileKey, MAX_FILE_NAME_LEN, sFileIndex[row]->Name);
@@ -94,13 +96,13 @@ void BuiltInFileSet::ShowMenu(Port& uiPort)
     }
 }
 
-bool BuiltInFileSet::IsValidFile(char fileKey)
+bool FileSet::IsValidFileKey(char fileKey)
 {
     size_t index = FileKeyIndex(fileKey);
     return index < sNumFiles;
 }
 
-bool BuiltInFileSet::GetFile(char fileKey, const char *& fileName, const uint8_t*& data, size_t& len)
+bool FileSet::GetFile(char fileKey, const char *& fileName, const uint8_t*& data, size_t& len)
 {
     size_t index = FileKeyIndex(fileKey);
     

@@ -78,6 +78,6 @@ extern void WriteHostAuxPorts(const char* str);
 #include "SCLPort.h"
 #include "AuxPort.h"
 #include "PaperTapeReader.h"
-#include "BuiltInFileSet.h"
+#include "FileSet.h"
 
 #endif // CONSOLE_ADAPTER_H

@@ -49,11 +49,11 @@ void MenuMode(Port& uiPort)
 void MountPaperTape(Port& uiPort)
 {
     auto isValidSel = [](char ch) -> bool {
-        return BuiltInFileSet::IsValidFile(ch) || ch == CTRL_C;
+        return FileSet::IsValidFileKey(ch) || ch == CTRL_C;
     };
 
     uiPort.Write("SELECT FILE:\r\n");
-    BuiltInFileSet::ShowMenu(uiPort);
+    FileSet::ShowMenu(uiPort);
 
     char selectedFile = GetMenuSelection(uiPort, isValidSel);
 
@@ -61,7 +61,7 @@ void MountPaperTape(Port& uiPort)
         const char *fileName;
         const uint8_t *fileData;
         size_t fileLen;
-        BuiltInFileSet::GetFile(selectedFile, fileName, fileData, fileLen);
+        FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
         PaperTapeReader::Mount(fileName, fileData, fileLen);
     }
 }

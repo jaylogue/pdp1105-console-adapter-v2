@@ -35,7 +35,7 @@ int main()
 #endif
 
     // Initialize access to built-in files.
-    BuiltInFileSet::Init();
+    FileSet::Init();
 
     // Initialize the activity LEDs
     ActivityLED::Init();
