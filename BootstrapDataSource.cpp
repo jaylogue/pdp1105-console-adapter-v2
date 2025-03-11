@@ -1,5 +1,5 @@
 #include "ConsoleAdapter.h"
-#include "BootstrapLoaderSource.h"
+#include "BootstrapDataSource.h"
 
 /** DEC PDP-11 Bootstrap Loader Code
  * 
@@ -23,7 +23,12 @@ const static uint16_t sBootstrapLoader[] = {
 };
 constexpr static size_t sBootstrapLoaderLen = sizeof(sBootstrapLoader) / sizeof(sBootstrapLoader[0]);
 
-bool BootstrapLoaderSource::GetWord(uint16_t& data, uint16_t& addr)
+const char * BootstrapDataSource::Name(void) const
+{
+    return "Bootstrap Loader";
+}
+
+bool BootstrapDataSource::GetWord(uint16_t& data, uint16_t& addr)
 {
     if (mCurWord < sBootstrapLoaderLen) {
         addr = mLoadAddr + ((uint16_t)mCurWord * 2);
@@ -38,19 +43,19 @@ bool BootstrapLoaderSource::GetWord(uint16_t& data, uint16_t& addr)
     }
 }
 
-void BootstrapLoaderSource::Advance(void)
+void BootstrapDataSource::Advance(void)
 {
     if (mCurWord < sBootstrapLoaderLen) {
         mCurWord++;
     }
 }
 
-bool BootstrapLoaderSource::AtEOF(void)
+bool BootstrapDataSource::AtEnd(void)
 {
     return mCurWord >= sBootstrapLoaderLen;
 }
 
-uint16_t BootstrapLoaderSource::GetStartAddress(void)
+uint16_t BootstrapDataSource::GetStartAddress(void)
 {
     return mLoadAddr;
 }

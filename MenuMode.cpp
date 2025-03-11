@@ -4,7 +4,8 @@
 #include <functional>
 
 #include "ConsoleAdapter.h"
-#include "BootstrapLoaderSource.h"
+#include "BootstrapDataSource.h"
+#include "LDADataSource.h"
 
 static void MountPaperTape(Port& uiPort);
 static void PaperTapeStatus(Port& uiPort);
@@ -17,7 +18,7 @@ static void LoadData(Port& uiPort);
 
 void MenuMode(Port& uiPort)
 {
-    uiPort.Write("MAIN MENU:\r\n"
+    uiPort.Write("\r\n*** MAIN MENU:\r\n"
                  "  m: Mount paper tape         l: Load data using M93xx console\r\n"
                  "  u: Unmount paper tape       x: Upload file via XMODEM\r\n"
                  "  s: Paper tape status        S: Adapter settings\r\n"
@@ -52,7 +53,7 @@ void MountPaperTape(Port& uiPort)
         return FileSet::IsValidFileKey(ch) || ch == CTRL_C;
     };
 
-    uiPort.Write("SELECT FILE:\r\n");
+    uiPort.Write("*** SELECT FILE:\r\n");
     FileSet::ShowMenu(uiPort);
 
     char selectedFile = GetMenuSelection(uiPort, isValidSel);
@@ -68,7 +69,7 @@ void MountPaperTape(Port& uiPort)
 
 void PaperTapeStatus(Port& uiPort)
 {
-    uiPort.Write("PAPER TAPE STATUS:");
+    uiPort.Write("*** PAPER TAPE STATUS:");
     if (PaperTapeReader::IsMounted()) {
         uiPort.Printf("\r\n  Tape Name: %s\r\n  Position: %" PRIu32 "/%" PRIu32 " (%" PRIu32 "%%)\r\n", 
                       PaperTapeReader::TapeName(),
@@ -78,6 +79,43 @@ void PaperTapeStatus(Port& uiPort)
     }
     else {
         uiPort.Write(" No tape mounted\r\n");
+    }
+}
+
+void LoadData(Port& uiPort)
+{
+    auto isValidSel = [](char ch) -> bool {
+        return FileSet::IsValidFileKey(ch) || ch == 'B' || ch == CTRL_C;
+    };
+
+    uiPort.Write("*** SELECT FILE:\r\n");
+    uiPort.Write("  B: Bootstrap Loader\r\n\r\n");
+    FileSet::ShowMenu(uiPort);
+
+    char selectedFile = GetMenuSelection(uiPort, isValidSel);
+
+    if (selectedFile == CTRL_C) {
+        return;
+    }
+
+    if (selectedFile == 'B') {
+        BootstrapDataSource bsLoader(017744);
+        LoadDataMode(uiPort, bsLoader);
+    }
+
+    else {
+        const char *fileName;
+        const uint8_t *fileData;
+        size_t fileLen;
+        FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
+
+        if (LDAReader::IsValidLDAFile(fileData, fileLen)) {
+            LDADataSource ldaSource(fileName, fileData, fileLen);
+            LoadDataMode(uiPort, ldaSource);
+        }
+        else {
+            stdio_printf("Not LDA file\r\n");
+        }
     }
 }
 
@@ -122,11 +160,4 @@ char GetMenuSelection(Port& uiPort, const char *validSelections)
         return strchr(validSelections, ch) != NULL;
     };
     return GetMenuSelection(uiPort, isValidSelection);
-}
-
-void LoadData(Port& uiPort)
-{
-    BootstrapLoaderSource bsLoader(017744);
-
-    LoadDataMode(uiPort, bsLoader);
 }

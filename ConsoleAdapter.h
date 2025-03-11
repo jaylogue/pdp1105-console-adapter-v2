@@ -44,12 +44,11 @@ class LoadDataSource
 public:
     LoadDataSource(void) = default;
     virtual ~LoadDataSource(void) = default;
+    virtual const char * Name(void) const = 0;
     virtual bool GetWord(uint16_t &data, uint16_t &addr) = 0;
     virtual void Advance(void) = 0;
-    virtual bool AtEOF(void) = 0;
+    virtual bool AtEnd(void) = 0;
     virtual uint16_t GetStartAddress(void) = 0;
-
-    constexpr static uint16_t NO_ADDR = UINT16_MAX;
 };
 
 // ================================================================================
@@ -68,6 +67,12 @@ extern bool TryReadHostAuxPorts(char& ch);
 extern bool TryReadHostAuxPorts(char& ch, Port *& port);
 extern void WriteHostAuxPorts(char ch);
 extern void WriteHostAuxPorts(const char* str);
+
+// ================================================================================
+// GENERAL CONSTANTS
+// ================================================================================
+
+constexpr static uint16_t NO_ADDR = UINT16_MAX;
 
 // ================================================================================
 // COMMON HEADERS
