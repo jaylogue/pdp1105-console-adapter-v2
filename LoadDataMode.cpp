@@ -9,12 +9,6 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
 
     uiPort.Printf("*** LOADING: %s\r\n", dataSrc.Name());
 
-    // Send a couple returns to get the M9301/M9312 console to issue a prompt
-    m93xxCtr.SendCR();
-    m93xxCtr.SendCR();
-
-    // TODO: add timeouts
-
     while (true) {
         char ch;
         uint16_t data, addr;
@@ -24,6 +18,13 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
 
         // Update the connection status of the SCL port
         gSCLPort.CheckConnected();
+
+        // Process any timeouts while talking to the M9301/M9312 console;
+        // If the console is unresponsive, abort and return to terminal mode.
+        if (m93xxCtr.ProcessTimeouts()) {
+            uiPort.Write("*** TIMEOUT (no response from console)\r\n");
+            break;
+        }
 
         // Check for an interrupt character from the UI port.
         if (uiPort.TryRead(ch) && ch == '\x03') {
@@ -37,11 +38,12 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
             // Pass the character to the M93xxController for processing.
             m93xxCtr.ProcessOutput(ch);
 
-            // If the M9301/M9312 is now ready for another command, but all data has been
-            // loaded, inform the user that:
-            //    a) the start address is being loaded (if the LDA has a start address), or
-            //    b) the load command is complete.
-            // This is done before the SCL character is echoed so that this message
+            // If the M9301/M9312 is now ready for another command, but all data
+            // has been loaded, inform the user that:
+            //   a) the start address is being loaded (if the LDA has a start address)
+            // or
+            //   b) the load command is complete.
+            // This is done *before* the character is echoed so that the message
             // appears ahead of the M9301/M9312 prompt.
             if (m93xxCtr.IsReadyForCommand() && dataSrc.AtEnd()) {
                 if (dataSrc.GetStartAddress() != NO_ADDR && !startAddrLoaded) {
@@ -53,7 +55,7 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
             }
 
             // Echo the character from the M9301/M9312 console so the user sees the
-            // prompts and commands as they are executed.
+            // commands as they are executed.
             WriteHostAuxPorts(ch);
         }
 
@@ -67,7 +69,7 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
         if (dataSrc.AtEnd()) {
 
             // If the LDA specifies a start address, issue a final set address
-            // command (L) so the user can start the program using the S command.
+            // command (L) with the start address
             if (dataSrc.GetStartAddress() != NO_ADDR && !startAddrLoaded) {
                 m93xxCtr.SetAddress(dataSrc.GetStartAddress());
                 startAddrLoaded = true;
@@ -78,15 +80,15 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
             break;
         }
 
-        // Get the next word to be loaded from the data source; if the next word
-        // is not ready yet, wait until it is.
+        // Get the next word to be loaded from the data source, along with its
+        // load address; if the next word is not ready yet, wait until it is.
         if (!dataSrc.GetWord(data, addr)) {
             continue;
         }
 
-        // If the next deposit address is not the load address for the next word,
-        // issue a set address (L) command to M9301/M9312 console the and wait
-        // for it to complete.
+        // If the next deposit address is not equal to the load address for
+        // the next word, issue a set address (L) command and wait for it
+        // to complete.
         if (m93xxCtr.NextDepositAddress() != addr) {
             m93xxCtr.SetAddress(addr);
             continue;

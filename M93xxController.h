@@ -12,6 +12,7 @@ public:
     ~M93xxController() = default;
 
     void ProcessOutput(char ch);
+    bool ProcessTimeouts(void);
     bool IsReadyForCommand(void) const;
     void SetAddress(uint16_t addr);
     void Examine(void);
@@ -29,6 +30,9 @@ public:
 
 private:
     enum {
+        kPromptSync_Start,
+        kPromptSync_WaitingForPrompt,
+        kPromptSync_WaitingForIdle,
         kWaitingForPrompt,
         kReadyForCommand,
         kWaitingForResponse,
@@ -39,6 +43,16 @@ private:
     uint16_t mLastAddr;
     uint16_t mLastVal;
     int mDigitsParsed;
+    uint64_t mPromptTimeoutTime;
+    uint64_t mIdleTimeoutTime;
+
+    void ArmPromptTimeout(void);
+    bool PromptTimeoutExpired(void);
+    void ArmIdleTimeout(void);
+    bool IdleTimeoutExpired(void);
+
+    static constexpr uint32_t kPromptTimeoutUS = 5 * 1000 * 1000;
+    static constexpr uint32_t kIdleTimeoutUS = 200 * 1000;
 };
 
 inline

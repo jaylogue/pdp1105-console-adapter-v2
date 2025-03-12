@@ -10,10 +10,17 @@
 
 #else // UNIT_TEST
 
-namespace SCLPort {
-extern void Write(char ch);
-extern void Write(const char * str);
-}
+#include <string>
+
+struct SCLPort {
+    std::string Output;
+    void Write(char ch)               { Output += ch; }
+    void Write(const char * str)      { Output += str; }
+} gSCLPort;
+
+uint64_t gCurTime;
+
+inline uint64_t time_us_64() { return gCurTime; }
 
 #endif // UNIT_TEST
 
@@ -21,7 +28,7 @@ extern void Write(const char * str);
 
 void M93xxController::Reset(void)
 {
-    mState = kWaitingForPrompt;
+    mState = kPromptSync_Start;
     mLastCmd = 0;
     mLastAddr = kUnknownAddress;
     mLastVal = 0;
@@ -30,6 +37,20 @@ void M93xxController::Reset(void)
 void M93xxController::ProcessOutput(char ch)
 {
     switch (mState) {
+    case kPromptSync_Start:
+    case kPromptSync_WaitingForPrompt:
+        if (ch == '@' || ch == '$') {
+            mState = kPromptSync_WaitingForIdle;
+        }
+        ArmIdleTimeout();
+        break;
+
+    case kPromptSync_WaitingForIdle:
+        if (ch != '@' && ch != '$') {
+            mState = kPromptSync_Start;
+        }
+        break;
+
     case kReadyForCommand:
     case kWaitingForResponse:
         switch (ch) {
@@ -66,6 +87,7 @@ void M93xxController::ProcessOutput(char ch)
             mState = kWaitingForPrompt;
             break;
         }
+        ArmPromptTimeout();
         break;
 
     case kParsingAddr:
@@ -115,6 +137,59 @@ void M93xxController::ProcessOutput(char ch)
     }
 }
 
+bool M93xxController::ProcessTimeouts(void)
+{
+    switch (mState) {
+    case kPromptSync_Start:
+        // Send CR to elicit a prompt from the M9301/M9312 console
+        // and wait for the prompt character.
+        SendCR();
+        ArmPromptTimeout();
+        ArmIdleTimeout();
+        mState = kPromptSync_WaitingForPrompt;
+        return false;
+
+    case kPromptSync_WaitingForPrompt:
+        // Fail if the console doesn't issue a prompt within the
+        // prompt timeout.
+        if (PromptTimeoutExpired()) {
+            return true;
+        }
+
+        // If no character received within the idle timeout, send
+        // another CR and continue waiting for prompt
+        // Note that, because the console ROM always waits for 2 input
+        // characters before responding, this second CR will always be
+        // necessary if the console was already waiting at a prompt
+        // when the prompt sync process started.
+        if (IdleTimeoutExpired()) {
+            SendCR();
+            ArmIdleTimeout();
+        }
+        return false;
+
+    case kPromptSync_WaitingForIdle:
+        // If the console has been sufficiently idle since the prompt
+        // was issued then consider it ready to accept commands.
+        if (IdleTimeoutExpired()) {
+            mState = kReadyForCommand;
+        }
+        return false;
+
+    case kReadyForCommand:
+        // No timeouts while waiting for a command from the application
+        return false;
+
+    default:
+        // In all other states, fail if the console doesn't re-issue
+        // a prompt within the prompt timeout.
+        if (PromptTimeoutExpired()) {
+            return true;
+        }
+        return false;
+    }
+}
+
 void M93xxController::SetAddress(uint16_t addr)
 {
     if (mState = kReadyForCommand) {
@@ -156,19 +231,49 @@ void M93xxController::SendCR(void)
     gSCLPort.Write('\r');
 }
 
+void M93xxController::ArmPromptTimeout(void)
+{
+    mPromptTimeoutTime = time_us_64() + kPromptTimeoutUS;
+}
+
+bool M93xxController::PromptTimeoutExpired(void)
+{
+    bool expired = (time_us_64() >= mPromptTimeoutTime);
+    if (expired) {
+        mPromptTimeoutTime = UINT64_MAX;
+    }
+    return expired;
+}
+
+void M93xxController::ArmIdleTimeout(void)
+{
+    mIdleTimeoutTime = time_us_64() + kIdleTimeoutUS;
+}
+
+bool M93xxController::IdleTimeoutExpired(void)
+{
+    bool expired = (time_us_64() >= mIdleTimeoutTime);
+    if (expired) {
+        mIdleTimeoutTime = UINT64_MAX;
+    }
+    return expired;
+}
+
 #ifdef UNIT_TEST
 
 #include <string>
 #include <assert.h>
 
-std::string sSCLOutput;
-
-namespace SCLPort {
-void Write(char ch)               { sSCLOutput += ch; }
-void Write(const char * str)      { sSCLOutput += str; }
+void InitController(M93xxController& c)
+{
+    c.Reset();
+    c.ProcessTimeouts();
+    c.ProcessOutput('@');
+    gCurTime += 250000;
+    c.ProcessTimeouts();
 }
 
-void DriveController(M93xxController &c, const char * &p)
+void DriveController(M93xxController& c, const char * &p)
 {
     while (*p) {
         c.ProcessOutput(*p++);
@@ -213,8 +318,10 @@ bool Test1(void)
     printf("TEST1 ................. ");
     fflush(stdout);
 
-    DriveController(c, p);
+    InitController(c);
     TEST_ASSERT(c.IsReadyForCommand());
+
+    DriveController(c, p);
     TEST_ASSERT(c.LastCommand() == 0);
     TEST_ASSERT(c.LastAddress() == M93xxController::kUnknownAddress);
 
@@ -363,6 +470,9 @@ bool Test2(void)
     printf("TEST2 ................. ");
     fflush(stdout);
 
+    InitController(c);
+    TEST_ASSERT(c.IsReadyForCommand());
+
     DriveController(c, p);
     TEST_ASSERT(c.IsReadyForCommand());
     TEST_ASSERT(c.LastCommand() == 0);
@@ -494,46 +604,40 @@ bool Test3(void)
     printf("TEST3 ................. ");
     fflush(stdout);
 
-    c.Reset();
-    c.ProcessOutput('@');
-    sSCLOutput.clear();
+    InitController(c);
+    gSCLPort.Output.clear();
     c.SetAddress(010101);
-    TEST_ASSERT(sSCLOutput.compare("L 010101\r") == 0);
+    TEST_ASSERT(gSCLPort.Output.compare("L 010101\r") == 0);
     TEST_ASSERT(!c.IsReadyForCommand());
 
-    c.Reset();
-    c.ProcessOutput('@');
-    sSCLOutput.clear();
+    InitController(c);
+    gSCLPort.Output.clear();
     c.SetAddress(0);
-    TEST_ASSERT(sSCLOutput.compare("L 000000\r") == 0);
+    TEST_ASSERT(gSCLPort.Output.compare("L 000000\r") == 0);
     TEST_ASSERT(!c.IsReadyForCommand());
 
-    c.Reset();
-    c.ProcessOutput('@');
-    sSCLOutput.clear();
+    InitController(c);
+    gSCLPort.Output.clear();
     c.Examine();
-    TEST_ASSERT(sSCLOutput.compare("E ") == 0);
+    TEST_ASSERT(gSCLPort.Output.compare("E ") == 0);
     TEST_ASSERT(!c.IsReadyForCommand());
 
-    c.Reset();
-    c.ProcessOutput('@');
-    sSCLOutput.clear();
+    InitController(c);
+    gSCLPort.Output.clear();
     c.Deposit(042);
-    TEST_ASSERT(sSCLOutput.compare("D 000042\r") == 0);
+    TEST_ASSERT(gSCLPort.Output.compare("D 000042\r") == 0);
     TEST_ASSERT(!c.IsReadyForCommand());
 
-    c.Reset();
-    c.ProcessOutput('@');
-    sSCLOutput.clear();
+    InitController(c);
+    gSCLPort.Output.clear();
     c.Start();
-    TEST_ASSERT(sSCLOutput.compare("S\r") == 0);
+    TEST_ASSERT(gSCLPort.Output.compare("S\r") == 0);
     TEST_ASSERT(!c.IsReadyForCommand());
 
-    c.Reset();
-    c.ProcessOutput('@');
-    sSCLOutput.clear();
+    InitController(c);
+    gSCLPort.Output.clear();
     c.SendCR();
-    TEST_ASSERT(sSCLOutput.compare("\r") == 0);
+    TEST_ASSERT(gSCLPort.Output.compare("\r") == 0);
 
     printf("PASS\n");
 
