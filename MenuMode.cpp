@@ -6,6 +6,7 @@
 #include "ConsoleAdapter.h"
 #include "BootstrapDataSource.h"
 #include "LDADataSource.h"
+#include "SimpleDataSource.h"
 
 static void MountPaperTape(Port& uiPort);
 static void PaperTapeStatus(Port& uiPort);
@@ -14,7 +15,9 @@ static char GetMenuSelection(Port& uiPort, const char validSelections[]);
 static size_t SelectFile(Port& uiPort);
 static void LoadData(Port& uiPort);
 static void LoadBootstrapLoader(Port& uiPort);
-static bool GetInteger(Port& uiPort, uint32_t& val, uint32_t defaultVal);
+static void LoadLDAFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen);
+static void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen);
+static bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal);
 
 #define CTRL_C '\x03'
 #define BS '\x08'
@@ -105,39 +108,37 @@ void LoadData(Port& uiPort)
 
     if (selectedFile == 'B') {
         LoadBootstrapLoader(uiPort);
+        return;
     }
 
-    else {
-        const char *fileName;
-        const uint8_t *fileData;
-        size_t fileLen;
-        FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
+    const char *fileName;
+    const uint8_t *fileData;
+    size_t fileLen;
+    FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
 
-        if (LDAReader::IsValidLDAFile(fileData, fileLen)) {
-            LDADataSource ldaSource(fileData, fileLen);
-            LoadDataMode(uiPort, ldaSource, fileName);
-        }
-        else {
-            stdio_printf("Not LDA file\r\n");
-        }
+    if (LDAReader::IsValidLDAFile(fileData, fileLen)) {
+        LoadLDAFile(uiPort, fileName, fileData, fileLen);
+        return;
     }
+
+    LoadSimpleFile(uiPort, fileName, fileData, fileLen);
 }
 
 void LoadBootstrapLoader(Port& uiPort)
 {
-    uint32_t memSize;
+    uint32_t memSizeKW;
     static uint32_t sDefaultMemSizeKW = 28;
 
     do {
         uiPort.Printf("*** SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
-        if (!GetInteger(uiPort, memSize, sDefaultMemSizeKW)) {
+        if (!GetInteger(uiPort, memSizeKW, 10, sDefaultMemSizeKW)) {
             return;
         }
-    } while (memSize < 4 || memSize > 28);
+    } while (memSizeKW < 4 || memSizeKW > 28);
 
-    sDefaultMemSizeKW = memSize;
+    sDefaultMemSizeKW = memSizeKW;
 
-    uint16_t loadAddr = BootstrapDataSource::MemSizeToLoadAddr(memSize);
+    uint16_t loadAddr = BootstrapDataSource::MemSizeToLoadAddr(memSizeKW);
 
     BootstrapDataSource bsLoader(loadAddr);
 
@@ -146,6 +147,40 @@ void LoadBootstrapLoader(Port& uiPort)
     snprintf(nameBuf, sizeof(nameBuf), nameFormat, loadAddr);
 
     LoadDataMode(uiPort, bsLoader, nameBuf);
+}
+
+void LoadLDAFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen)
+{
+    LDADataSource dataSource(fileData, fileLen);
+
+    const char nameFormat[] = "%s (LDA file)";
+    char nameBuf[sizeof(nameFormat) + MAX_FILE_NAME_LEN];
+    snprintf(nameBuf, sizeof(nameBuf), nameFormat, fileName);
+
+    LoadDataMode(uiPort, dataSource, nameBuf);
+}
+
+void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen)
+{
+    static uint32_t loadAddr;
+    static uint32_t sDefaultLoadAddr = 0;
+
+    do {
+        uiPort.Printf("*** LOAD ADDRESS [%" PRId32 "]: ", sDefaultLoadAddr);
+        if (!GetInteger(uiPort, loadAddr, 8, sDefaultLoadAddr)) {
+            return;
+        }
+    } while (loadAddr > UINT16_MAX);
+
+    sDefaultLoadAddr = loadAddr;
+
+    SimpleDataSource dataSource(fileData, fileLen, loadAddr);
+
+    const char nameFormat[] = "%s (simple data file, load address %06o)";
+    char nameBuf[sizeof(nameFormat) + MAX_FILE_NAME_LEN + 6];
+    snprintf(nameBuf, sizeof(nameBuf), nameFormat, fileName, loadAddr);
+
+    LoadDataMode(uiPort, dataSource, nameBuf);
 }
 
 char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection)
@@ -191,7 +226,7 @@ char GetMenuSelection(Port& uiPort, const char *validSelections)
     return GetMenuSelection(uiPort, isValidSelection);
 }
 
-bool GetInteger(Port& uiPort, uint32_t& val, uint32_t defaultVal)
+bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal)
 {
     int charCount = 0;
     char ch;
@@ -220,9 +255,10 @@ bool GetInteger(Port& uiPort, uint32_t& val, uint32_t defaultVal)
                 return true;
             }
 
-            if (isdigit(ch)) {
+            if ((base == 10 && isdigit(ch)) ||
+                (base == 8 && ch >= '0' && ch <= '7')) {
                 uiPort.Write(ch);
-                val = (val * 10) + ch - '0';
+                val = (val * base) + (ch - '0');
                 charCount++;
             }
 

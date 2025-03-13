@@ -27,6 +27,7 @@ add_executable(pdp1105-console-adapter
     M93xxController.cpp
     BootstrapDataSource.cpp
     LDADataSource.cpp
+    SimpleDataSource.cpp
     FileSet.cpp
     ActivityLED.cpp
     Utils.cpp
