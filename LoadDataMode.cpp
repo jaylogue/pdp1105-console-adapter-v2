@@ -7,7 +7,7 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
     M93xxController m93xxCtr;
     bool startAddrLoaded = false;
 
-    uiPort.Printf("*** LOADING: %s\r\n", dataSrc.Name());
+    uiPort.Printf("*** LOADING: %s", dataSrc.Name());
 
     while (true) {
         char ch;

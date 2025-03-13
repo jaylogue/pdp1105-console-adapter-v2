@@ -25,7 +25,10 @@ constexpr static size_t sBootstrapLoaderLen = sizeof(sBootstrapLoader) / sizeof(
 
 const char * BootstrapDataSource::Name(void) const
 {
-    return "Bootstrap Loader";
+    static const char nameFormat[] = "Bootstrap Loader @ %06o";
+    static char nameBuf[sizeof(nameFormat) + 6];
+    snprintf(nameBuf, sizeof(nameBuf), nameFormat, mLoadAddr);
+    return nameBuf;
 }
 
 bool BootstrapDataSource::GetWord(uint16_t& data, uint16_t& addr)
@@ -58,4 +61,15 @@ bool BootstrapDataSource::AtEnd(void)
 uint16_t BootstrapDataSource::GetStartAddress(void)
 {
     return mLoadAddr;
+}
+
+uint16_t BootstrapDataSource::MemSizeToLoadAddr(uint32_t memSizeKW)
+{
+    if (memSizeKW < 4) {
+        memSizeKW = 4;
+    }
+    else if (memSizeKW > 28) {
+        memSizeKW = 28;
+    }
+    return (uint16_t)(memSizeKW * 2048) - 28; // Load address is 28 bytes before end of memory
 }

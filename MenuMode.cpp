@@ -13,8 +13,14 @@ static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSele
 static char GetMenuSelection(Port& uiPort, const char validSelections[]);
 static size_t SelectFile(Port& uiPort);
 static void LoadData(Port& uiPort);
+static bool GetInteger(Port& uiPort, uint32_t& val, uint32_t defaultVal);
+
+static uint32_t sDefaultMemSizeKW = 28;
 
 #define CTRL_C '\x03'
+#define BS '\x08'
+#define DEL '\x7F'
+#define RUBOUT "\x08 \x08"
 
 void MenuMode(Port& uiPort)
 {
@@ -99,7 +105,22 @@ void LoadData(Port& uiPort)
     }
 
     if (selectedFile == 'B') {
-        BootstrapDataSource bsLoader(017744);
+
+        uint32_t memSize;
+
+        do {
+            uiPort.Printf("*** SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
+            if (!GetInteger(uiPort, memSize, sDefaultMemSizeKW)) {
+                return;
+            }
+        } while (memSize < 4 || memSize > 28);
+
+        sDefaultMemSizeKW = memSize;
+
+        uint16_t loadAddr = BootstrapDataSource::MemSizeToLoadAddr(memSize);
+
+        BootstrapDataSource bsLoader(loadAddr);
+
         LoadDataMode(uiPort, bsLoader);
     }
 
@@ -160,4 +181,48 @@ char GetMenuSelection(Port& uiPort, const char *validSelections)
         return strchr(validSelections, ch) != NULL;
     };
     return GetMenuSelection(uiPort, isValidSelection);
+}
+
+bool GetInteger(Port& uiPort, uint32_t& val, uint32_t defaultVal)
+{
+    int charCount = 0;
+    char ch;
+
+    val = 0;
+
+    while (true) {
+        // Update the state of the activity LEDs
+        ActivityLED::UpdateState();
+
+        // Update the connection status of the SCL port
+        gSCLPort.CheckConnected();
+
+        if (uiPort.TryRead(ch)) {
+
+            if (ch == CTRL_C) {
+                uiPort.Write("^C\r\n");
+                return false;
+            }
+
+            if (ch == '\r') {
+                if (charCount == 0) {
+                    val = defaultVal;
+                }
+                uiPort.Write("\r\n");
+                return true;
+            }
+
+            if (isdigit(ch)) {
+                uiPort.Write(ch);
+                val = (val * 10) + ch - '0';
+                charCount++;
+            }
+
+            else if ((ch == BS || ch == DEL) && charCount > 0) {
+                uiPort.Write(RUBOUT);
+                val = val / 10;
+                charCount--;
+            }
+        }
+    }
 }

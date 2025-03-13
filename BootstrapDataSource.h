@@ -14,6 +14,7 @@ public:
     virtual bool AtEnd(void);
     virtual uint16_t GetStartAddress(void);
 
+    static uint16_t MemSizeToLoadAddr(uint32_t memSize);
     static bool IsValidLoadAddr(uint16_t addr);
 
 private:
