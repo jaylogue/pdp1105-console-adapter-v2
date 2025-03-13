@@ -2,12 +2,12 @@
 #include "ConsoleAdapter.h"
 #include "M93xxController.h"
 
-void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc)
+void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
 {
     M93xxController m93xxCtr;
     bool startAddrLoaded = false;
 
-    uiPort.Printf("*** LOADING: %s", dataSrc.Name());
+    uiPort.Printf("*** LOADING FILE: %s", fileName);
 
     while (true) {
         char ch;

@@ -44,7 +44,6 @@ class LoadDataSource
 public:
     LoadDataSource(void) = default;
     virtual ~LoadDataSource(void) = default;
-    virtual const char * Name(void) const = 0;
     virtual bool GetWord(uint16_t &data, uint16_t &addr) = 0;
     virtual void Advance(void) = 0;
     virtual bool AtEnd(void) = 0;
@@ -57,7 +56,7 @@ public:
 
 extern void TerminalMode(void);
 extern void MenuMode(Port& uiPort);
-extern void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc);
+extern void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName);
 
 // ================================================================================
 // UTILITY FUNCTIONS

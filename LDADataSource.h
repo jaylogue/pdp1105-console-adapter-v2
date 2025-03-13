@@ -25,11 +25,10 @@ public:
 class LDADataSource final : public LoadDataSource
 {
 public:
-    LDADataSource(const char * name, const uint8_t * buf, size_t len);
+    LDADataSource(const uint8_t * buf, size_t len);
     ~LDADataSource() = default;
     LDADataSource(const LDADataSource&) = delete;
 
-    virtual const char * Name(void) const;
     virtual bool GetWord(uint16_t& data, uint16_t& addr);
     virtual void Advance(void);
     virtual bool AtEnd(void);
@@ -40,7 +39,6 @@ public:
 private:
     LDAReader mReader;
     uint16_t mOverrideLoadAddr;
-    const char * const mName;
 };
 
 #endif // LDA_DATA_SOURCE_H

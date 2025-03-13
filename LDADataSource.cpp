@@ -5,15 +5,10 @@
 #include "ConsoleAdapter.h"
 #include "LDADataSource.h"
 
-LDADataSource::LDADataSource(const char * name, const uint8_t * buf, size_t len)
-: mReader(buf, len), mOverrideLoadAddr(NO_ADDR), mName(name)
+LDADataSource::LDADataSource(const uint8_t * buf, size_t len)
+: mReader(buf, len), mOverrideLoadAddr(NO_ADDR)
 {
     mReader.NextBlock();
-}
-
-const char * LDADataSource::Name(void) const
-{
-    return mName;
 }
 
 bool LDADataSource::GetWord(uint16_t& data, uint16_t& addr)

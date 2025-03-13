@@ -23,14 +23,6 @@ const static uint16_t sBootstrapLoader[] = {
 };
 constexpr static size_t sBootstrapLoaderLen = sizeof(sBootstrapLoader) / sizeof(sBootstrapLoader[0]);
 
-const char * BootstrapDataSource::Name(void) const
-{
-    static const char nameFormat[] = "Bootstrap Loader @ %06o";
-    static char nameBuf[sizeof(nameFormat) + 6];
-    snprintf(nameBuf, sizeof(nameBuf), nameFormat, mLoadAddr);
-    return nameBuf;
-}
-
 bool BootstrapDataSource::GetWord(uint16_t& data, uint16_t& addr)
 {
     if (mCurWord < sBootstrapLoaderLen) {

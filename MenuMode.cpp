@@ -13,9 +13,8 @@ static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSele
 static char GetMenuSelection(Port& uiPort, const char validSelections[]);
 static size_t SelectFile(Port& uiPort);
 static void LoadData(Port& uiPort);
+static void LoadBootstrapLoader(Port& uiPort);
 static bool GetInteger(Port& uiPort, uint32_t& val, uint32_t defaultVal);
-
-static uint32_t sDefaultMemSizeKW = 28;
 
 #define CTRL_C '\x03'
 #define BS '\x08'
@@ -105,23 +104,7 @@ void LoadData(Port& uiPort)
     }
 
     if (selectedFile == 'B') {
-
-        uint32_t memSize;
-
-        do {
-            uiPort.Printf("*** SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
-            if (!GetInteger(uiPort, memSize, sDefaultMemSizeKW)) {
-                return;
-            }
-        } while (memSize < 4 || memSize > 28);
-
-        sDefaultMemSizeKW = memSize;
-
-        uint16_t loadAddr = BootstrapDataSource::MemSizeToLoadAddr(memSize);
-
-        BootstrapDataSource bsLoader(loadAddr);
-
-        LoadDataMode(uiPort, bsLoader);
+        LoadBootstrapLoader(uiPort);
     }
 
     else {
@@ -131,13 +114,38 @@ void LoadData(Port& uiPort)
         FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
 
         if (LDAReader::IsValidLDAFile(fileData, fileLen)) {
-            LDADataSource ldaSource(fileName, fileData, fileLen);
-            LoadDataMode(uiPort, ldaSource);
+            LDADataSource ldaSource(fileData, fileLen);
+            LoadDataMode(uiPort, ldaSource, fileName);
         }
         else {
             stdio_printf("Not LDA file\r\n");
         }
     }
+}
+
+void LoadBootstrapLoader(Port& uiPort)
+{
+    uint32_t memSize;
+    static uint32_t sDefaultMemSizeKW = 28;
+
+    do {
+        uiPort.Printf("*** SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
+        if (!GetInteger(uiPort, memSize, sDefaultMemSizeKW)) {
+            return;
+        }
+    } while (memSize < 4 || memSize > 28);
+
+    sDefaultMemSizeKW = memSize;
+
+    uint16_t loadAddr = BootstrapDataSource::MemSizeToLoadAddr(memSize);
+
+    BootstrapDataSource bsLoader(loadAddr);
+
+    const char nameFormat[] = "Bootstrap Loader (start address %06o)";
+    char nameBuf[sizeof(nameFormat) + 6];
+    snprintf(nameBuf, sizeof(nameBuf), nameFormat, loadAddr);
+
+    LoadDataMode(uiPort, bsLoader, nameBuf);
 }
 
 char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection)

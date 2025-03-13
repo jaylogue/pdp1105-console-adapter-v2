@@ -8,7 +8,6 @@ public:
     ~BootstrapDataSource() = default;
     BootstrapDataSource(const BootstrapDataSource&) = delete;
 
-    virtual const char * Name(void) const;
     virtual bool GetWord(uint16_t& data, uint16_t& addr);
     virtual void Advance(void);
     virtual bool AtEnd(void);
