@@ -4,19 +4,21 @@
 #include <functional>
 
 #include "ConsoleAdapter.h"
-#include "BootstrapDataSource.h"
+#include "BootstrapLoader.h"
+#include "AbsoluteLoader.h"
 #include "LDADataSource.h"
 #include "SimpleDataSource.h"
 
 static void MountPaperTape(Port& uiPort);
 static void PaperTapeStatus(Port& uiPort);
-static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection);
-static char GetMenuSelection(Port& uiPort, const char validSelections[]);
-static size_t SelectFile(Port& uiPort);
 static void LoadData(Port& uiPort);
 static void LoadBootstrapLoader(Port& uiPort);
+static void LoadAbsoluteLoader(Port& uiPort);
 static void LoadLDAFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen);
 static void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen);
+static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection);
+static char GetMenuSelection(Port& uiPort, const char validSelections[]);
+static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
 static bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal);
 
 #define CTRL_C '\x03'
@@ -58,21 +60,34 @@ void MenuMode(Port& uiPort)
 void MountPaperTape(Port& uiPort)
 {
     auto isValidSel = [](char ch) -> bool {
-        return FileSet::IsValidFileKey(ch) || ch == CTRL_C;
+        return FileSet::IsValidFileKey(ch) || ch == 'A' || ch == CTRL_C;
     };
 
     uiPort.Write("*** SELECT FILE:\r\n");
+    uiPort.Write("  A: Absolute Loader\r\n");
     FileSet::ShowMenu(uiPort);
 
     char selectedFile = GetMenuSelection(uiPort, isValidSel);
 
-    if (selectedFile != CTRL_C) {
-        const char *fileName;
-        const uint8_t *fileData;
-        size_t fileLen;
-        FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
-        PaperTapeReader::Mount(fileName, fileData, fileLen);
+    if (selectedFile == CTRL_C) {
+        return;
     }
+
+    const char * fileName;
+    const uint8_t * fileData;
+    size_t fileLen;
+
+    if (selectedFile == 'A') {
+        fileName = "Absolute Loader";
+        fileData = gAbsoluteLoaderPaperTapeFile;
+        fileLen = gAbsoluteLoaderPaperTapeFileLen;
+    }
+
+    else {
+        FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
+    }
+
+    PaperTapeReader::Mount(fileName, fileData, fileLen);
 }
 
 void PaperTapeStatus(Port& uiPort)
@@ -93,16 +108,22 @@ void PaperTapeStatus(Port& uiPort)
 void LoadData(Port& uiPort)
 {
     auto isValidSel = [](char ch) -> bool {
-        return FileSet::IsValidFileKey(ch) || ch == 'B' || ch == CTRL_C;
+        return FileSet::IsValidFileKey(ch) || ch == 'A' || ch == 'B' || ch == CTRL_C;
     };
 
     uiPort.Write("*** SELECT FILE:\r\n");
-    uiPort.Write("  B: Bootstrap Loader\r\n\r\n");
+    uiPort.Write("  A: Absolute Loader\r\n");
+    uiPort.Write("  B: Bootstrap Loader\r\n");
     FileSet::ShowMenu(uiPort);
 
     char selectedFile = GetMenuSelection(uiPort, isValidSel);
 
     if (selectedFile == CTRL_C) {
+        return;
+    }
+
+    if (selectedFile == 'A') {
+        LoadAbsoluteLoader(uiPort);
         return;
     }
 
@@ -127,26 +148,39 @@ void LoadData(Port& uiPort)
 void LoadBootstrapLoader(Port& uiPort)
 {
     uint32_t memSizeKW;
-    static uint32_t sDefaultMemSizeKW = 28;
 
-    do {
-        uiPort.Printf("*** SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
-        if (!GetInteger(uiPort, memSizeKW, 10, sDefaultMemSizeKW)) {
-            return;
-        }
-    } while (memSizeKW < 4 || memSizeKW > 28);
+    if (!GetSystemMemorySize(uiPort, memSizeKW)) {
+        return;
+    }
 
-    sDefaultMemSizeKW = memSizeKW;
+    uint16_t loadAddr = BootstrapLoaderDataSource::MemSizeToLoadAddr(memSizeKW);
 
-    uint16_t loadAddr = BootstrapDataSource::MemSizeToLoadAddr(memSizeKW);
+    BootstrapLoaderDataSource dataSource(loadAddr);
 
-    BootstrapDataSource bsLoader(loadAddr);
-
-    const char nameFormat[] = "Bootstrap Loader (start address %06o)";
+    const char nameFormat[] = "Bootstrap Loader (load address %06o)";
     char nameBuf[sizeof(nameFormat) + 6];
     snprintf(nameBuf, sizeof(nameBuf), nameFormat, loadAddr);
 
-    LoadDataMode(uiPort, bsLoader, nameBuf);
+    LoadDataMode(uiPort, dataSource, nameBuf);
+}
+
+void LoadAbsoluteLoader(Port& uiPort)
+{
+    uint32_t memSizeKW;
+
+    if (!GetSystemMemorySize(uiPort, memSizeKW)) {
+        return;
+    }
+
+    uint16_t loadAddr = AbsoluteLoaderDataSource::MemSizeToLoadAddr(memSizeKW);
+
+    AbsoluteLoaderDataSource dataSource(loadAddr);
+
+    const char nameFormat[] = "Absolute Loader (load address %06o)";
+    char nameBuf[sizeof(nameFormat) + 6];
+    snprintf(nameBuf, sizeof(nameBuf), nameFormat, loadAddr);
+
+    LoadDataMode(uiPort, dataSource, nameBuf);
 }
 
 void LoadLDAFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen)
@@ -224,6 +258,22 @@ char GetMenuSelection(Port& uiPort, const char *validSelections)
         return strchr(validSelections, ch) != NULL;
     };
     return GetMenuSelection(uiPort, isValidSelection);
+}
+
+bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW)
+{
+    static uint32_t sDefaultMemSizeKW = 28;
+
+    do {
+        uiPort.Printf("*** ENTER SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
+        if (!GetInteger(uiPort, memSizeKW, 10, sDefaultMemSizeKW)) {
+            return false;
+        }
+    } while (memSizeKW < 4 || memSizeKW > 28);
+
+    sDefaultMemSizeKW = memSizeKW;
+
+    return true;
 }
 
 bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal)

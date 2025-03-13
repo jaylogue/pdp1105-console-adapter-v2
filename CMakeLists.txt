@@ -25,9 +25,10 @@ add_executable(pdp1105-console-adapter
     PaperTapeReader.cpp
     LoadDataMode.cpp
     M93xxController.cpp
-    BootstrapDataSource.cpp
     LDADataSource.cpp
     SimpleDataSource.cpp
+    BootstrapLoader.cpp
+    AbsoluteLoader.cpp
     FileSet.cpp
     ActivityLED.cpp
     Utils.cpp
