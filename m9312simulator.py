@@ -20,7 +20,8 @@ class M9312Simulator:
         self.memory = bytearray(64 * 1024)
         self.current_address = 0
         self.previous_command = None
-        self.prompt = "\r\n@"
+        self.eol = "\n\r\r\r\r\r\r\r\r\r\r\r\r\r"
+        self.prompt = "@"
         self.last_direction = None
         
         # Set I/O device
@@ -178,7 +179,8 @@ class M9312Simulator:
         """Reset state and print status line"""
         self.current_address = 0
         self.previous_command = None
-        self.write("\r\n000000 173000 165212 000000")
+        self.write(self.eol)
+        self.write("000000 173000 165212 000000")
     
     def is_octal_digit(self, char):
         """Check if a character is an octal digit (0-7)"""
@@ -264,6 +266,7 @@ class M9312Simulator:
 
         try:
             while True:
+                self.write(self.eol)
                 self.write(self.prompt)
                 self.process_command()
         except KeyboardInterrupt:
