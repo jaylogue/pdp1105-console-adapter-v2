@@ -59,6 +59,10 @@ void MenuMode(Port& uiPort)
 
 void MountPaperTape(Port& uiPort)
 {
+    const char * fileName;
+    const uint8_t * fileData;
+    size_t fileLen;
+
     auto isValidSel = [](char ch) -> bool {
         return FileSet::IsValidFileKey(ch) || ch == 'A' || ch == CTRL_C;
     };
@@ -67,24 +71,18 @@ void MountPaperTape(Port& uiPort)
     uiPort.Write("  A: Absolute Loader\r\n");
     FileSet::ShowMenu(uiPort);
 
-    char selectedFile = GetMenuSelection(uiPort, isValidSel);
-
-    if (selectedFile == CTRL_C) {
-        return;
-    }
-
-    const char * fileName;
-    const uint8_t * fileData;
-    size_t fileLen;
-
-    if (selectedFile == 'A') {
+    char selection = GetMenuSelection(uiPort, isValidSel);
+    switch (selection) {
+    case 'A':
         fileName = "Absolute Loader";
         fileData = gAbsoluteLoaderPaperTapeFile;
         fileLen = gAbsoluteLoaderPaperTapeFileLen;
-    }
-
-    else {
-        FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
+        break;
+    case CTRL_C:
+        return;
+    default:
+        FileSet::GetFile(selection, fileName, fileData, fileLen);
+        break;
     }
 
     PaperTapeReader::Mount(fileName, fileData, fileLen);
@@ -107,6 +105,10 @@ void PaperTapeStatus(Port& uiPort)
 
 void LoadData(Port& uiPort)
 {
+    const char *fileName;
+    const uint8_t *fileData;
+    size_t fileLen;
+
     auto isValidSel = [](char ch) -> bool {
         return FileSet::IsValidFileKey(ch) || ch == 'A' || ch == 'B' || ch == CTRL_C;
     };
@@ -116,33 +118,25 @@ void LoadData(Port& uiPort)
     uiPort.Write("  B: Bootstrap Loader\r\n");
     FileSet::ShowMenu(uiPort);
 
-    char selectedFile = GetMenuSelection(uiPort, isValidSel);
-
-    if (selectedFile == CTRL_C) {
-        return;
-    }
-
-    if (selectedFile == 'A') {
+    char selection = GetMenuSelection(uiPort, isValidSel);
+    switch (selection) {
+    case 'A':
         LoadAbsoluteLoader(uiPort);
-        return;
-    }
-
-    if (selectedFile == 'B') {
+        break;
+    case 'B':
         LoadBootstrapLoader(uiPort);
-        return;
+        break;
+    case CTRL_C:
+        break;
+    default:
+        FileSet::GetFile(selection, fileName, fileData, fileLen);
+        if (LDAReader::IsValidLDAFile(fileData, fileLen)) {
+            LoadLDAFile(uiPort, fileName, fileData, fileLen);
+        }
+        else {
+            LoadSimpleFile(uiPort, fileName, fileData, fileLen);
+        }
     }
-
-    const char *fileName;
-    const uint8_t *fileData;
-    size_t fileLen;
-    FileSet::GetFile(selectedFile, fileName, fileData, fileLen);
-
-    if (LDAReader::IsValidLDAFile(fileData, fileLen)) {
-        LoadLDAFile(uiPort, fileName, fileData, fileLen);
-        return;
-    }
-
-    LoadSimpleFile(uiPort, fileName, fileData, fileLen);
 }
 
 void LoadBootstrapLoader(Port& uiPort)
