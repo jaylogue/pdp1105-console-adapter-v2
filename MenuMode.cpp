@@ -21,11 +21,6 @@ static char GetMenuSelection(Port& uiPort, const char validSelections[]);
 static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
 static bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal);
 
-#define CTRL_C '\x03'
-#define BS '\x08'
-#define DEL '\x7F'
-#define RUBOUT "\x08 \x08"
-
 void MenuMode(Port& uiPort)
 {
     uiPort.Write("\r\n*** MAIN MENU:\r\n"

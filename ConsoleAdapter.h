@@ -72,6 +72,10 @@ extern void WriteHostAuxPorts(const char* str);
 // ================================================================================
 
 constexpr static uint16_t NO_ADDR = UINT16_MAX;
+constexpr static char CTRL_C = '\x03';
+constexpr static char BS = '\x08';
+constexpr static char DEL = '\x7F';
+constexpr static const char * RUBOUT = "\x08 \x08";
 
 // ================================================================================
 // COMMON HEADERS

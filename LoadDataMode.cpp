@@ -27,7 +27,7 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
         }
 
         // Check for an interrupt character from the UI port.
-        if (uiPort.TryRead(ch) && ch == '\x03') {
+        if (uiPort.TryRead(ch) && ch == CTRL_C) {
             uiPort.Write("*** INTERRUPTED\r\n");
             break;
         }
