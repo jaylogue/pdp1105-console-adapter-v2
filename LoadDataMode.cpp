@@ -7,7 +7,7 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
     M93xxController m93xxCtr;
     bool startAddrLoaded = false;
 
-    uiPort.Printf("*** LOADING FILE: %s", fileName);
+    uiPort.Printf("*** LOADING FILE: %s\r\n", fileName);
 
     while (true) {
         char ch;
@@ -36,11 +36,15 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
         if (gSCLPort.TryRead(ch)) {
 
             // Pass the character to the M93xxController for processing.
-            m93xxCtr.ProcessOutput(ch);
+            if (!m93xxCtr.ProcessOutput(ch)) {
+                uiPort.Write("*** ERROR (unexpected response from console)\r\n");
+                break;
+            }
 
             // If the M9301/M9312 is now ready for another command, but all data
             // has been loaded, inform the user that:
-            //   a) the start address is being loaded (if the LDA has a start address)
+            //   a) the start address is being loaded (if the data source has a
+            //      start address)
             // or
             //   b) the load command is complete.
             // This is done *before* the character is echoed so that the message
@@ -68,8 +72,8 @@ void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
         // If the last data word has been deposited...
         if (dataSrc.AtEnd()) {
 
-            // If the LDA specifies a start address, issue a final set address
-            // command (L) with the start address
+            // If the data source specifies a start address, issue a final set
+            // address command (L) with the start address
             if (dataSrc.GetStartAddress() != NO_ADDR && !startAddrLoaded) {
                 m93xxCtr.SetAddress(dataSrc.GetStartAddress());
                 startAddrLoaded = true;

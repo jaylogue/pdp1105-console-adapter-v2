@@ -28,27 +28,53 @@ inline uint64_t time_us_64() { return gCurTime; }
 
 void M93xxController::Reset(void)
 {
-    mState = kPromptSync_Start;
+    mState = kStart;
     mLastCmd = 0;
     mLastAddr = kUnknownAddress;
     mLastVal = 0;
+    CancelPromptTimeout();
+    CancelIdleTimeout();
 }
 
-void M93xxController::ProcessOutput(char ch)
+bool M93xxController::ProcessOutput(char ch)
 {
+    // Fail if the character is not something we expect the M9301/M9312
+    // console to output.  This may indicate that we're not talking to a
+    // console or that the serial configuration is wrong.
+    if (!IsValidOutputChar(ch)) {
+        return false;
+    }
+
     switch (mState) {
-    case kPromptSync_Start:
-    case kPromptSync_WaitingForPrompt:
-        if (ch == '@' || ch == '$') {
-            mState = kPromptSync_WaitingForIdle;
+    case kWaitingForSyncChar:
+
+        // Ignore all characters from the console until we see the sync
+        // character. Once the sync character is seen, start looking for
+        // the initial prompt character. Arm the idle timeout in case we
+        // need to send another sync character.
+        if (ch == kSyncChar) {
+            mState = kWaitingForInitialPrompt;
+            ArmIdleTimeout();
         }
-        ArmIdleTimeout();
+
         break;
 
-    case kPromptSync_WaitingForIdle:
-        if (ch != '@' && ch != '$') {
-            mState = kPromptSync_Start;
+    case kWaitingForInitialPrompt:
+
+        // If we get any valid character while waiting for the initial prompt
+        // then cancel the idle timeout.
+        CancelIdleTimeout();
+
+        /* fall thru */
+
+    case kWaitingForPrompt:
+
+        // Once we get a prompt character the console is ready for a command.
+        if (ch == '@' || ch == '$') {
+            mState = kReadyForCommand;
+            CancelPromptTimeout();
         }
+
         break;
 
     case kReadyForCommand:
@@ -128,64 +154,59 @@ void M93xxController::ProcessOutput(char ch)
             mState = kWaitingForPrompt;
         }
         break;
-
-    case kWaitingForPrompt:
-        if (ch == '@' || ch == '$') {
-            mState = kReadyForCommand;
-        }
-        break;
     }
+
+    return true;
 }
 
 bool M93xxController::ProcessTimeouts(void)
 {
     switch (mState) {
-    case kPromptSync_Start:
-        // Send CR to elicit a prompt from the M9301/M9312 console
-        // and wait for the prompt character.
-        SendCR();
+    case kStart:
+
+        // Start the interaction with the console by sending a special
+        // sync character and waiting for it to be echoed. Use a
+        // character that will not be interpreted in any meaningful
+        // way by the console code (a '.' in this case).
+        gSCLPort.Write(kSyncChar);
+        mState = kWaitingForSyncChar;
+
+        // Arm the prompt timeout to limit the total amount of time
+        // spent waiting for the initial prompt.
         ArmPromptTimeout();
-        ArmIdleTimeout();
-        mState = kPromptSync_WaitingForPrompt;
+
         return false;
 
-    case kPromptSync_WaitingForPrompt:
-        // Fail if the console doesn't issue a prompt within the
-        // prompt timeout.
+    case kWaitingForInitialPrompt:
+
+        // If waiting for the initial prompt and no characters are
+        // received within the idle timeout, then send another sync
+        // character and continue waiting.
+        //
+        // This handles the case where the console was already waiting
+        // at a prompt when the first sync character was sent.  Because
+        // the console always waits for 2 input characters before
+        // reacting, an additional character is necessary to get the
+        // console to issue a prompt.
+        if (IdleTimeoutExpired()) {
+            gSCLPort.Write(kSyncChar);
+        }
+
+        /* fall thru */
+
+    default:
+
+        // Fail if the console doesn't issue a prompt within an appropriate
+        // amount of time.
         if (PromptTimeoutExpired()) {
             return true;
         }
 
-        // If no character received within the idle timeout, send
-        // another CR and continue waiting for prompt
-        // Note that, because the console ROM always waits for 2 input
-        // characters before responding, this second CR will always be
-        // necessary if the console was already waiting at a prompt
-        // when the prompt sync process started.
-        if (IdleTimeoutExpired()) {
-            SendCR();
-            ArmIdleTimeout();
-        }
-        return false;
-
-    case kPromptSync_WaitingForIdle:
-        // If the console has been sufficiently idle since the prompt
-        // was issued then consider it ready to accept commands.
-        if (IdleTimeoutExpired()) {
-            mState = kReadyForCommand;
-        }
         return false;
 
     case kReadyForCommand:
-        // No timeouts while waiting for a command from the application
-        return false;
 
-    default:
-        // In all other states, fail if the console doesn't re-issue
-        // a prompt within the prompt timeout.
-        if (PromptTimeoutExpired()) {
-            return true;
-        }
+        // No timeouts while waiting for a command from the application
         return false;
     }
 }
@@ -231,32 +252,23 @@ void M93xxController::SendCR(void)
     gSCLPort.Write('\r');
 }
 
-void M93xxController::ArmPromptTimeout(void)
+bool M93xxController::IsValidOutputChar(char ch)
 {
-    mPromptTimeoutTime = time_us_64() + kPromptTimeoutUS;
-}
+    static const char kValidChars[] = { 
+        '@', '$', ' ', '\r', '\n',
+        'L', 'E', 'D', 'S',
+        '0', '1', '2', '3', '4', '5', '6', '7'
+    };
 
-bool M93xxController::PromptTimeoutExpired(void)
-{
-    bool expired = (time_us_64() >= mPromptTimeoutTime);
-    if (expired) {
-        mPromptTimeoutTime = UINT64_MAX;
+    if (memchr(kValidChars, ch, sizeof(kValidChars)) != NULL) {
+        return true;
     }
-    return expired;
-}
 
-void M93xxController::ArmIdleTimeout(void)
-{
-    mIdleTimeoutTime = time_us_64() + kIdleTimeoutUS;
-}
-
-bool M93xxController::IdleTimeoutExpired(void)
-{
-    bool expired = (time_us_64() >= mIdleTimeoutTime);
-    if (expired) {
-        mIdleTimeoutTime = UINT64_MAX;
+    if (ch == kSyncChar && (mState == kWaitingForSyncChar || mState == kWaitingForInitialPrompt)) {
+        return true;
     }
-    return expired;
+
+    return false;
 }
 
 #ifdef UNIT_TEST
@@ -268,6 +280,7 @@ void InitController(M93xxController& c)
 {
     c.Reset();
     c.ProcessTimeouts();
+    c.ProcessOutput('.');
     c.ProcessOutput('@');
     gCurTime += 250000;
     c.ProcessTimeouts();

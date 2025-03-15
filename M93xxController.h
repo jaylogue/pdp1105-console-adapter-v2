@@ -11,7 +11,7 @@ public:
     M93xxController();
     ~M93xxController() = default;
 
-    void ProcessOutput(char ch);
+    bool ProcessOutput(char ch);
     bool ProcessTimeouts(void);
     bool IsReadyForCommand(void) const;
     void SetAddress(uint16_t addr);
@@ -30,9 +30,9 @@ public:
 
 private:
     enum {
-        kPromptSync_Start,
-        kPromptSync_WaitingForPrompt,
-        kPromptSync_WaitingForIdle,
+        kStart,
+        kWaitingForSyncChar,
+        kWaitingForInitialPrompt,
         kWaitingForPrompt,
         kReadyForCommand,
         kWaitingForResponse,
@@ -46,13 +46,17 @@ private:
     uint64_t mPromptTimeoutTime;
     uint64_t mIdleTimeoutTime;
 
+    bool IsValidOutputChar(char ch);
     void ArmPromptTimeout(void);
     bool PromptTimeoutExpired(void);
+    void CancelPromptTimeout(void);
     void ArmIdleTimeout(void);
     bool IdleTimeoutExpired(void);
+    void CancelIdleTimeout(void);
 
     static constexpr uint32_t kPromptTimeoutUS = 5 * 1000 * 1000;
     static constexpr uint32_t kIdleTimeoutUS = 200 * 1000;
+    static constexpr char kSyncChar = '.';
 };
 
 inline
@@ -96,5 +100,50 @@ bool M93xxController::IsReadyForCommand(void) const
 {
     return mState == kReadyForCommand;
 }
+
+inline
+void M93xxController::ArmPromptTimeout(void)
+{
+    mPromptTimeoutTime = time_us_64() + kPromptTimeoutUS;
+}
+
+inline
+bool M93xxController::PromptTimeoutExpired(void)
+{
+    bool expired = (time_us_64() >= mPromptTimeoutTime);
+    if (expired) {
+        CancelPromptTimeout();
+    }
+    return expired;
+}
+
+inline
+void M93xxController::CancelPromptTimeout(void)
+{
+    mPromptTimeoutTime = UINT64_MAX;
+}
+
+inline
+void M93xxController::ArmIdleTimeout(void)
+{
+    mIdleTimeoutTime = time_us_64() + kIdleTimeoutUS;
+}
+
+inline
+bool M93xxController::IdleTimeoutExpired(void)
+{
+    bool expired = (time_us_64() >= mIdleTimeoutTime);
+    if (expired) {
+        CancelIdleTimeout();
+    }
+    return expired;
+}
+
+inline
+void M93xxController::CancelIdleTimeout(void)
+{
+    mIdleTimeoutTime = UINT64_MAX;
+}
+
 
 #endif // M93XX_CONTROLLER_H
