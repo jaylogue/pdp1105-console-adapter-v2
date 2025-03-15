@@ -16,23 +16,23 @@ project(pdp1105-console-adapter)
 pico_sdk_init()
 
 add_executable(pdp1105-console-adapter
-    main.cpp
-    TerminalMode.cpp
-    MenuMode.cpp
-    HostPort.cpp
-    SCLPort.cpp
-    AuxPort.cpp
-    PaperTapeReader.cpp
-    LoadDataMode.cpp
-    M93xxController.cpp
-    LDADataSource.cpp
-    SimpleDataSource.cpp
-    BootstrapLoader.cpp
-    AbsoluteLoader.cpp
-    FileSet.cpp
-    ActivityLED.cpp
-    Utils.cpp
-    crc32.c
+    src/main.cpp
+    src/TerminalMode.cpp
+    src/MenuMode.cpp
+    src/HostPort.cpp
+    src/SCLPort.cpp
+    src/AuxPort.cpp
+    src/PaperTapeReader.cpp
+    src/LoadDataMode.cpp
+    src/M93xxController.cpp
+    src/LDADataSource.cpp
+    src/SimpleDataSource.cpp
+    src/BootstrapLoader.cpp
+    src/AbsoluteLoader.cpp
+    src/FileSet.cpp
+    src/ActivityLED.cpp
+    src/Utils.cpp
+    src/crc32.c
 )
 
 target_link_libraries(pdp1105-console-adapter 
