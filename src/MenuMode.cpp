@@ -8,14 +8,17 @@
 #include "AbsoluteLoader.h"
 #include "LDADataSource.h"
 #include "SimpleDataSource.h"
+#include "UploadFileMode.h"
 
 static void MountPaperTape(Port& uiPort);
 static void PaperTapeStatus(Port& uiPort);
-static void LoadData(Port& uiPort);
+static void LoadFile(Port& uiPort);
 static void LoadBootstrapLoader(Port& uiPort);
 static void LoadAbsoluteLoader(Port& uiPort);
 static void LoadLDAFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen);
 static void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen);
+static void UploadAndLoadFile(Port& uiPort);
+static void LoadPreviouslyUploadedFile(Port& uiPort);
 static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection);
 static char GetMenuSelection(Port& uiPort, const char validSelections[]);
 static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
@@ -24,9 +27,10 @@ static bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVa
 void MenuMode(Port& uiPort)
 {
     uiPort.Write("\r\n*** MAIN MENU:\r\n"
-                 "  m: Mount paper tape         l: Load data using M93xx console\r\n"
-                 "  u: Unmount paper tape       x: Upload file via XMODEM\r\n"
-                 "  s: Paper tape status        S: Adapter settings\r\n"
+                 "  m: Mount paper tape         l: Load file using M93xx console\r\n"
+                 "  u: Unmount paper tape       S: Adapter settings\r\n"
+                 "  s: Paper tape status\r\n"
+                 "  -----\r\n"
                  "  q: Return to terminal mode  Ctrl+^: Send menu character\r\n");
 
     char sel = GetMenuSelection(uiPort, (const char[]){ 'm', 'u', 's', 'l', 'x', 'c', 'q', MENU_KEY, CTRL_C, 0 });
@@ -45,7 +49,7 @@ void MenuMode(Port& uiPort)
         PaperTapeStatus(uiPort);
         break;
     case 'l':
-        LoadData(uiPort);
+        LoadFile(uiPort);
         break;
     default:
         break;
@@ -59,11 +63,19 @@ void MountPaperTape(Port& uiPort)
     size_t fileLen;
 
     auto isValidSel = [](char ch) -> bool {
-        return FileSet::IsValidFileKey(ch) || ch == 'A' || ch == CTRL_C;
+        return (FileSet::IsValidFileKey(ch)
+                || ch == 'A' || ch == 'X' 
+                || (gUploadedFileLen != 0 && ch == 'P')
+                || ch == CTRL_C);
     };
 
     uiPort.Write("*** SELECT FILE:\r\n");
     uiPort.Write("  A: Absolute Loader\r\n");
+    uiPort.Write("  X: Upload file via XMODEM\r\n");
+    if (gUploadedFileLen != 0) {
+        uiPort.Write("  P: Previously uploaded file\r\n");
+    }
+    uiPort.Write("  -----\r\n");
     FileSet::ShowMenu(uiPort);
 
     char selection = GetMenuSelection(uiPort, isValidSel);
@@ -72,6 +84,14 @@ void MountPaperTape(Port& uiPort)
         fileName = "Absolute Loader";
         fileData = gAbsoluteLoaderPaperTapeFile;
         fileLen = gAbsoluteLoaderPaperTapeFileLen;
+        break;
+    case 'X':
+        UploadFileMode(uiPort);
+        /* fall thru */
+    case 'P':
+        fileName = "UPLOADED FILE";
+        fileData = gUploadedFile;
+        fileLen = gUploadedFileLen;
         break;
     case CTRL_C:
         return;
@@ -98,19 +118,27 @@ void PaperTapeStatus(Port& uiPort)
     }
 }
 
-void LoadData(Port& uiPort)
+void LoadFile(Port& uiPort)
 {
     const char *fileName;
     const uint8_t *fileData;
     size_t fileLen;
 
     auto isValidSel = [](char ch) -> bool {
-        return FileSet::IsValidFileKey(ch) || ch == 'A' || ch == 'B' || ch == CTRL_C;
+        return (FileSet::IsValidFileKey(ch)
+                || ch == 'A' || ch == 'B' || ch == 'X'
+                || (gUploadedFileLen != 0 && ch == 'P')
+                || ch == CTRL_C);
     };
 
     uiPort.Write("*** SELECT FILE:\r\n");
     uiPort.Write("  A: Absolute Loader\r\n");
     uiPort.Write("  B: Bootstrap Loader\r\n");
+    uiPort.Write("  X: Upload file via XMODEM\r\n");
+    if (gUploadedFileLen != 0) {
+        uiPort.Write("  P: Previously uploaded file\r\n");
+    }
+    uiPort.Write("  -----\r\n");
     FileSet::ShowMenu(uiPort);
 
     char selection = GetMenuSelection(uiPort, isValidSel);
@@ -120,6 +148,12 @@ void LoadData(Port& uiPort)
         break;
     case 'B':
         LoadBootstrapLoader(uiPort);
+        break;
+    case 'X':
+        UploadAndLoadFile(uiPort);
+        break;
+    case 'P':
+        LoadPreviouslyUploadedFile(uiPort);
         break;
     case CTRL_C:
         break;
@@ -150,7 +184,7 @@ void LoadBootstrapLoader(Port& uiPort)
     char nameBuf[sizeof(nameFormat) + 6];
     snprintf(nameBuf, sizeof(nameBuf), nameFormat, loadAddr);
 
-    LoadDataMode(uiPort, dataSource, nameBuf);
+    LoadFileMode(uiPort, dataSource, nameBuf);
 }
 
 void LoadAbsoluteLoader(Port& uiPort)
@@ -169,18 +203,18 @@ void LoadAbsoluteLoader(Port& uiPort)
     char nameBuf[sizeof(nameFormat) + 6];
     snprintf(nameBuf, sizeof(nameBuf), nameFormat, loadAddr);
 
-    LoadDataMode(uiPort, dataSource, nameBuf);
+    LoadFileMode(uiPort, dataSource, nameBuf);
 }
 
 void LoadLDAFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen)
 {
     LDADataSource dataSource(fileData, fileLen);
 
-    const char nameFormat[] = "%s (LDA file)";
-    char nameBuf[sizeof(nameFormat) + MAX_FILE_NAME_LEN];
-    snprintf(nameBuf, sizeof(nameBuf), nameFormat, fileName);
+    const char nameFormat[] = "%s (LDA format, %u bytes)";
+    char nameBuf[sizeof(nameFormat) + MAX_FILE_NAME_LEN + 10];
+    snprintf(nameBuf, sizeof(nameBuf), nameFormat, fileName, (unsigned)fileLen);
 
-    LoadDataMode(uiPort, dataSource, nameBuf);
+    LoadFileMode(uiPort, dataSource, nameBuf);
 }
 
 void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen)
@@ -189,7 +223,7 @@ void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileDat
     static uint32_t sDefaultLoadAddr = 0;
 
     do {
-        uiPort.Printf("*** LOAD ADDRESS [%" PRId32 "]: ", sDefaultLoadAddr);
+        uiPort.Printf("*** ENTER LOAD ADDRESS [%" PRId32 "]: ", sDefaultLoadAddr);
         if (!GetInteger(uiPort, loadAddr, 8, sDefaultLoadAddr)) {
             return;
         }
@@ -199,11 +233,29 @@ void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileDat
 
     SimpleDataSource dataSource(fileData, fileLen, loadAddr);
 
-    const char nameFormat[] = "%s (simple data file, load address %06o)";
-    char nameBuf[sizeof(nameFormat) + MAX_FILE_NAME_LEN + 6];
-    snprintf(nameBuf, sizeof(nameBuf), nameFormat, fileName, loadAddr);
+    const char nameFormat[] = "%s (binary format, %u bytes, load address %06o)";
+    char nameBuf[sizeof(nameFormat) + MAX_FILE_NAME_LEN + 10 + 6];
+    snprintf(nameBuf, sizeof(nameBuf), nameFormat, fileName, fileLen, loadAddr);
 
-    LoadDataMode(uiPort, dataSource, nameBuf);
+    LoadFileMode(uiPort, dataSource, nameBuf);
+}
+
+void UploadAndLoadFile(Port& uiPort)
+{
+    if (UploadFileMode(uiPort)) {
+        LoadPreviouslyUploadedFile(uiPort);
+    }
+}
+
+void LoadPreviouslyUploadedFile(Port& uiPort)
+{
+    if (LDAReader::IsValidLDAFile(gUploadedFile, gUploadedFileLen)) {
+        LoadLDAFile(uiPort, "UPLOADED FILE", gUploadedFile, gUploadedFileLen);
+    }
+    else {
+        TrimXMODEMPadding();
+        LoadSimpleFile(uiPort, "UPLOADED FILE", gUploadedFile, gUploadedFileLen);
+    }
 }
 
 char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection)

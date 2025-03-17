@@ -56,7 +56,7 @@ public:
 
 extern void TerminalMode(void);
 extern void MenuMode(Port& uiPort);
-extern void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName);
+extern void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName);
 
 // ================================================================================
 // UTILITY FUNCTIONS
@@ -76,6 +76,7 @@ constexpr static char CTRL_C = '\x03';
 constexpr static char BS = '\x08';
 constexpr static char DEL = '\x7F';
 constexpr static const char * RUBOUT = "\x08 \x08";
+constexpr static char CAN = '\x18';
 
 // ================================================================================
 // COMMON HEADERS

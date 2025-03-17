@@ -2,7 +2,7 @@
 #include "ConsoleAdapter.h"
 #include "M93xxController.h"
 
-void LoadDataMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
+void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
 {
     M93xxController m93xxCtr;
     bool startAddrLoaded = false;

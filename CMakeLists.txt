@@ -23,7 +23,8 @@ add_executable(pdp1105-console-adapter
     src/SCLPort.cpp
     src/AuxPort.cpp
     src/PaperTapeReader.cpp
-    src/LoadDataMode.cpp
+    src/LoadFileMode.cpp
+    src/UploadFileMode.cpp
     src/M93xxController.cpp
     src/LDADataSource.cpp
     src/SimpleDataSource.cpp
@@ -33,7 +34,12 @@ add_executable(pdp1105-console-adapter
     src/ActivityLED.cpp
     src/Utils.cpp
     src/crc32.c
+    external/async_xmodem/xmodem_server.c
 )
+
+target_include_directories(pdp1105-console-adapter
+    PRIVATE
+        external/async_xmodem)
 
 target_link_libraries(pdp1105-console-adapter 
     pico_stdlib

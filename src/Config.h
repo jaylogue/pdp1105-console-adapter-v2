@@ -62,4 +62,7 @@
 // Input character to invoke the adapter menu while in terminal mode
 #define MENU_KEY '\036' // Ctrl+^
 
+// Maximum size of an uploaded file
+#define MAX_UPLOAD_FILE_SIZE (64*1024)
+
 #endif // CONFIG_H
