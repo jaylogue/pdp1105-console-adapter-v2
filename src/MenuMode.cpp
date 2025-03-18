@@ -10,6 +10,23 @@
 #include "SimpleDataSource.h"
 #include "UploadFileMode.h"
 
+struct MenuItem
+{
+    char Selector;
+    const char * Text;
+
+    static const MenuItem END;
+    static const MenuItem SEPARATOR(const char * text = "-----")  { return (MenuItem) { '-', text }; }
+    static const MenuItem HIDDEN(char selector) { return (MenuItem) { selector, "" }; }
+
+    bool IsEnd(void) const { return Text == NULL; }
+    bool IsSeparator(void) const { return !IsEnd() && Selector == '-'; }
+    bool IsHidden(void) const { return !IsEnd() && Text[0] == 0; }
+    bool IsSelectable(void) const { return !IsEnd() && !IsSeparator(); }
+};
+
+const MenuItem MenuItem::END = { 0, NULL };
+
 static void MountPaperTape(Port& uiPort);
 static void PaperTapeStatus(Port& uiPort);
 static void LoadFile(Port& uiPort);
@@ -19,21 +36,34 @@ static void LoadLDAFile(Port& uiPort, const char * fileName, const uint8_t * fil
 static void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen);
 static void UploadAndLoadFile(Port& uiPort);
 static void LoadPreviouslyUploadedFile(Port& uiPort);
+static char SelectFile(Port& uiPort, bool includeBootstrap);
+static const MenuItem * BuildFileMenu(bool includeBootstrap);
+static void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCols = 2, int colWidth = -1, int colMargin = 2);
 static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection);
-static char GetMenuSelection(Port& uiPort, const char validSelections[]);
+static char GetMenuSelection(Port& uiPort, const MenuItem * menu);
+static bool IsValidMenuSelection(const MenuItem * menu, char sel);
 static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
 static bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal);
 
 void MenuMode(Port& uiPort)
 {
-    uiPort.Write("\r\n*** MAIN MENU:\r\n"
-                 "  m: Mount paper tape         l: Load file using M93xx console\r\n"
-                 "  u: Unmount paper tape       S: Adapter settings\r\n"
-                 "  s: Paper tape status\r\n"
-                 "  -----\r\n"
-                 "  q: Return to terminal mode  Ctrl+^: Send menu character\r\n");
+    static const MenuItem sMainMenu[] = {
+        { 'm', "Mount paper tape"               },
+        { 'u', "Unmount paper tape"             },
+        { 's', "Paper tape status"              },
+        { 'l', "Load file using M93xx console"  },
+        { 'S', "Adapter settings"               },
+        MenuItem::SEPARATOR(),
+        { 'q', "Return to terminal mode"        },
+        { MENU_KEY, "Send menu character"       },
+        MenuItem::HIDDEN(CTRL_C),
+        MenuItem::END
+    };
 
-    char sel = GetMenuSelection(uiPort, (const char[]){ 'm', 'u', 's', 'l', 'x', 'c', 'q', MENU_KEY, CTRL_C, 0 });
+    uiPort.Write("\r\n");
+    ShowMenu(uiPort, "*** MAIN MENU:", sMainMenu, 2, 26, 2);
+
+    char sel = GetMenuSelection(uiPort, sMainMenu);
 
     switch (sel) {
     case MENU_KEY:
@@ -56,37 +86,35 @@ void MenuMode(Port& uiPort)
     }
 }
 
+static inline
+char FileIndexToSelector(size_t index)
+{
+    return (char)(index < 10 ? '0' + index : 'a' + (index = 10));
+}
+
+static inline
+size_t SelectorToFileIndex(char sel)
+{
+    return (isdigit(sel) ? sel - '0' : (sel - 'a') + 10);
+}
+
 void MountPaperTape(Port& uiPort)
 {
     const char * fileName;
     const uint8_t * fileData;
     size_t fileLen;
-
-    auto isValidSel = [](char ch) -> bool {
-        return (FileSet::IsValidFileKey(ch)
-                || ch == 'A' || ch == 'X' 
-                || (gUploadedFileLen != 0 && ch == 'P')
-                || ch == CTRL_C);
-    };
-
-    uiPort.Write("*** SELECT FILE:\r\n");
-    uiPort.Write("  A: Absolute Loader\r\n");
-    uiPort.Write("  X: Upload file via XMODEM\r\n");
-    if (gUploadedFileLen != 0) {
-        uiPort.Write("  P: Previously uploaded file\r\n");
-    }
-    uiPort.Write("  -----\r\n");
-    FileSet::ShowMenu(uiPort);
-
-    char selection = GetMenuSelection(uiPort, isValidSel);
-    switch (selection) {
+    
+    char sel = SelectFile(uiPort, false);
+    switch (sel) {
     case 'A':
         fileName = "Absolute Loader";
         fileData = gAbsoluteLoaderPaperTapeFile;
         fileLen = gAbsoluteLoaderPaperTapeFileLen;
         break;
     case 'X':
-        UploadFileMode(uiPort);
+        if (!UploadFileMode(uiPort)) {
+            return;
+        }
         /* fall thru */
     case 'P':
         fileName = "UPLOADED FILE";
@@ -96,7 +124,7 @@ void MountPaperTape(Port& uiPort)
     case CTRL_C:
         return;
     default:
-        FileSet::GetFile(selection, fileName, fileData, fileLen);
+        FileSet::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
         break;
     }
 
@@ -124,25 +152,9 @@ void LoadFile(Port& uiPort)
     const uint8_t *fileData;
     size_t fileLen;
 
-    auto isValidSel = [](char ch) -> bool {
-        return (FileSet::IsValidFileKey(ch)
-                || ch == 'A' || ch == 'B' || ch == 'X'
-                || (gUploadedFileLen != 0 && ch == 'P')
-                || ch == CTRL_C);
-    };
+    char sel = SelectFile(uiPort, true);
 
-    uiPort.Write("*** SELECT FILE:\r\n");
-    uiPort.Write("  A: Absolute Loader\r\n");
-    uiPort.Write("  B: Bootstrap Loader\r\n");
-    uiPort.Write("  X: Upload file via XMODEM\r\n");
-    if (gUploadedFileLen != 0) {
-        uiPort.Write("  P: Previously uploaded file\r\n");
-    }
-    uiPort.Write("  -----\r\n");
-    FileSet::ShowMenu(uiPort);
-
-    char selection = GetMenuSelection(uiPort, isValidSel);
-    switch (selection) {
+    switch (sel) {
     case 'A':
         LoadAbsoluteLoader(uiPort);
         break;
@@ -158,7 +170,7 @@ void LoadFile(Port& uiPort)
     case CTRL_C:
         break;
     default:
-        FileSet::GetFile(selection, fileName, fileData, fileLen);
+        FileSet::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
         if (LDAReader::IsValidLDAFile(fileData, fileLen)) {
             LoadLDAFile(uiPort, fileName, fileData, fileLen);
         }
@@ -258,6 +270,125 @@ void LoadPreviouslyUploadedFile(Port& uiPort)
     }
 }
 
+char SelectFile(Port& uiPort, bool includeBootstrap)
+{
+    const MenuItem * fileMenu = BuildFileMenu(includeBootstrap);
+    ShowMenu(uiPort, "*** SELECT FILE:", fileMenu, 2, -1, 2);
+    return GetMenuSelection(uiPort, fileMenu);
+}
+
+const MenuItem * BuildFileMenu(bool includeBootstrap)
+{
+    static MenuItem sFileMenu[MAX_FILES + 7];
+
+    MenuItem * item = sFileMenu;
+
+    size_t numFiles = FileSet::NumFiles();
+    if (numFiles > 0) {
+        for (size_t i = 0; i < numFiles; i++) {
+            *item++ = (MenuItem) { FileIndexToSelector(i), FileSet::GetFileName(i) };
+        }
+    }
+    else {
+        *item++ = MenuItem::SEPARATOR("(no files)");
+    }
+
+    *item++ = MenuItem::SEPARATOR();
+
+    *item++ = (MenuItem){ 'A', "Absolute Loader" };
+
+    if (includeBootstrap) {
+        *item++ = (MenuItem){ 'B', "Bootstrap Loader" };
+    }
+
+    *item++ = (MenuItem){ 'X', "Upload file via XMODEM" };
+    if (gUploadedFileLen != 0) {
+        *item++ = (MenuItem){ 'P', "Previously uploaded file" };
+    }
+
+    *item++ = (MenuItem){ CTRL_C, "Return to terminal mode" };
+
+    *item++ = MenuItem::END;
+
+    return sFileMenu;
+}
+
+void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCols, int colWidth, int colMargin)
+{
+    // Compute minimal column width if not specified
+    if (colWidth < 0) {
+        for (auto item = menu; !item->IsEnd(); item++) {
+            int itemWidth = (iscntrl(item->Selector) ? 6 : 1) // "Ctrl+x" or "x"
+                          + 2                                 // ": "
+                          + strlen(item->Text);               // "<item-text>"
+            if (colWidth < itemWidth) {
+                colWidth = itemWidth;
+            }
+        }
+    }
+
+    uiPort.Printf("%s\r\n", title);
+
+    // Render all the visible items in the menu
+    while (!menu->IsEnd()) {
+
+        // If the current item is hidden, skip it.
+        if (menu->IsHidden()) {
+            menu++;
+            continue;
+        }
+
+        // If the current item is a separator, print it and skip to the next item.
+        if (menu->IsSeparator()) {
+            uiPort.Printf("%-*s%s\r\n", colMargin, "", menu->Text);
+            menu++;
+            continue;
+        }
+
+        // Determine the number of menu items in the current group
+        size_t numItemsInGroup = 0;
+        for (auto item = menu; item->IsSelectable() && !item->IsHidden(); item++) {
+            numItemsInGroup++;
+        }
+
+        // Determine the number of rows needed to display group
+        size_t numRowsInGroup = (numItemsInGroup + 1) / numCols;
+
+        // Print each row...
+        for (size_t row = 0; row < numRowsInGroup; row++) {
+            int padding = 0;
+
+            // Print each item in the current row...
+            for (size_t i = row; i < numItemsInGroup; i += numRowsInGroup) {
+                auto item = menu + i;
+
+                // Pad the previous column out to the column width and add the
+                // column margin (whitespace between columns)
+                uiPort.Printf("%-*s", padding + colMargin, "");
+
+                // Print the current menu item, translating control character
+                // selectors to "Ctrl+x"
+                uiPort.Printf("%s%c: %s",
+                    (iscntrl(item->Selector)) ? "Ctrl+" : "",
+                    (iscntrl(item->Selector)) ? item->Selector + 0x40 : item->Selector,
+                    item->Text);
+
+                // Determine the width of the item just printed.
+                int itemWidth = (iscntrl(item->Selector) ? 6 : 1) +
+                              + 2
+                              + strlen(item->Text);
+
+                // Arrange for necessary padding when printing the next column
+                padding = colWidth - itemWidth;
+            }
+
+            uiPort.Write("\r\n");
+        }
+
+        menu += numItemsInGroup;
+    }
+}
+
 char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection)
 {
     char ch;
@@ -293,12 +424,22 @@ char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection)
     return ch;
 }
 
-char GetMenuSelection(Port& uiPort, const char *validSelections)
+char GetMenuSelection(Port& uiPort, const MenuItem * menu)
 {
-    auto isValidSelection = [validSelections](char ch) -> bool {
-        return strchr(validSelections, ch) != NULL;
+    auto isValidSel = [menu](char sel) -> bool {
+        return IsValidMenuSelection(menu, sel);
     };
-    return GetMenuSelection(uiPort, isValidSelection);
+    return GetMenuSelection(uiPort, isValidSel);
+}
+
+bool IsValidMenuSelection(const MenuItem * menu, char sel)
+{
+    for (auto item = menu; !item->IsEnd(); item++) {
+        if (item->IsSelectable() && sel == item->Selector) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW)
@@ -331,6 +472,7 @@ bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal)
         // Update the connection status of the SCL port
         gSCLPort.CheckConnected();
 
+        // Read and process a character if available...
         if (uiPort.TryRead(ch)) {
 
             if (ch == CTRL_C) {

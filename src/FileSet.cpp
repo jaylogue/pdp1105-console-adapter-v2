@@ -16,107 +16,46 @@ struct FileHeader
     const FileHeader * Next(void) const;
 };
 
-constexpr static char kBaseFileKey = '0';
-constexpr static size_t kMaxFiles = 36; // '0'-'9','a'-'z'
-constexpr static size_t kMaxSingleColumnFiles = 8; // Max files to show in a single column
+const FileHeader * FileSet::sFileIndex[MAX_FILES];
+size_t FileSet::sNumFiles;
 
+// Area of Flash in which files are stored
 static const FileHeader * const sFileSetStart = (const FileHeader *)(XIP_BASE + 1 * 1024 * 1024);
 static const FileHeader * const sFileSetEnd   = (const FileHeader *)(XIP_BASE + PICO_FLASH_SIZE_BYTES);
-static const FileHeader *sFileIndex[kMaxFiles];
-static size_t sNumFiles;
-static size_t sMaxNameLen = 0;
-
-// Convert index to file key: 0-9 -> '0'-'9', 10-35 -> 'a'-'z'
-static inline char FileKey(size_t index)
-{
-    return (index < 10) ? ('0' + index) : ('a' + (index - 10));
-}
-
-// Convert file key to index: '0'-'9' -> 0-9, 'a'-'z' -> 10-35
-// Returns SIZE_MAX if file key is out of range
-static inline size_t FileKeyIndex(char key)
-{
-    if (key >= '0' && key <= '9') {
-        return key - '0';
-    } else if (key >= 'a' && key <= 'z') {
-        return 10 + (key - 'a');
-    } else {
-        return SIZE_MAX;
-    }
-}
 
 void FileSet::Init(void)
 {
-    // Scan the file set in flash for valid files; for each file...
-    for (auto file = sFileSetStart; sNumFiles < kMaxFiles && file->IsValid(); file = file->Next()) {
-
-        // Add it to the index of built-in files
+    // Scan the file set in flash for valid files and build an index
+    for (auto file = sFileSetStart; sNumFiles < MAX_FILES && file->IsValid(); file = file->Next()) {
         sFileIndex[sNumFiles] = file;
         sNumFiles++;
-
-        // Determine the length of the longest file name
-        size_t nameLen = strnlen(file->Name, sizeof(file->Name));
-        if (nameLen > sMaxNameLen) {
-            sMaxNameLen = nameLen;
-        }
     }
 }
 
-void FileSet::ShowMenu(Port& uiPort)
+size_t FileSet::NumFiles(void)
 {
-    // Determine whether to use one or two columns
-    bool useDoubleColumn = (sNumFiles > kMaxSingleColumnFiles);
-    size_t rows = useDoubleColumn ? (sNumFiles + 1) / 2 : sNumFiles;
-    char fileKey;
-    
-    // For each row...
-    for (size_t row = 0; row < rows; row++) {
-
-        // Print first column item
-        fileKey = FileKey(row);
-        uiPort.Printf("  %c: %.*s", fileKey, MAX_FILE_NAME_LEN, sFileIndex[row]->Name);
-        
-        // Print second column item if using double column and it exists
-        if (useDoubleColumn) {
-            size_t col2Index = row + rows;
-            if (col2Index < sNumFiles) {
-                fileKey = FileKey(col2Index);
-                // Add padding for first column if displaying two columns
-                uiPort.Printf("%-*s%c: %.*s", 
-                    (int)(sMaxNameLen - strnlen(sFileIndex[row]->Name, MAX_FILE_NAME_LEN) + 4),
-                    "", fileKey, MAX_FILE_NAME_LEN, sFileIndex[col2Index]->Name);
-            }
-        }
-        
-        uiPort.Printf("\r\n");
-    }
-
-    if (sNumFiles == 0) {
-        uiPort.Write("  0 files\r\n");
-    }
+    return sNumFiles;
 }
 
-bool FileSet::IsValidFileKey(char fileKey)
+bool FileSet::GetFile(size_t index, const char *& fileName, const uint8_t*& data, size_t& len)
 {
-    size_t index = FileKeyIndex(fileKey);
-    return index < sNumFiles;
-}
-
-bool FileSet::GetFile(char fileKey, const char *& fileName, const uint8_t*& data, size_t& len)
-{
-    size_t index = FileKeyIndex(fileKey);
-    
     if (index < sNumFiles) {
         fileName = sFileIndex[index]->Name;
         data = sFileIndex[index]->Data;
         len = sFileIndex[index]->Length;
         return true;
     }
+    else {
+        fileName = NULL;
+        data = NULL;
+        len = 0;
+        return false;
+    }
+}
 
-    fileName = NULL;
-    data = NULL;
-    len = 0;
-    return false;
+const char * FileSet::GetFileName(size_t index)
+{
+    return (index < sNumFiles) ? sFileIndex[index]->Name : NULL;
 }
 
 bool FileHeader::IsValid(void) const

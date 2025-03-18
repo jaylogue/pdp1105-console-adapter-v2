@@ -56,6 +56,10 @@
 // Minimum amount of time (in ms) that the status LED should remain either on or off.
 #define STATUS_LED_MIN_STATE_TIME_MS 30
 
+// Maximum number of files
+// NOTE: must be <= available selection keys ('0'-'9' and 'a'-'z')
+#define MAX_FILES 36
+
 // Maximum file name length
 #define MAX_FILE_NAME_LEN 32
 
