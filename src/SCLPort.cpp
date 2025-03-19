@@ -6,9 +6,7 @@
 
 SCLPort gSCLPort;
 
-static bool sLastReaderRun;
-
-static void ConfigSCLClock(uint32_t bitRate);
+bool SCLPort::sReaderRunRequested;
 
 void SCLPort::Init(void)
 {
@@ -31,17 +29,33 @@ void SCLPort::Init(void)
     SetConfig(kDefaultConfig);
 
     // Initialize the SCL detect pin
+    //
+    // NOTE: The SCL detect input is active-low, i.e. a low (GND) value
+    // indicates the SCL port is connected.  As a convenience,
+    // GPIO_OVERRIDE_INVERT is used to make the connected state appear
+    // as 1 when read by gpio_get().
     gpio_init(SCL_DETECT_PIN);
     gpio_set_dir(SCL_DETECT_PIN, GPIO_IN);
     gpio_set_inover(SCL_DETECT_PIN, GPIO_OVERRIDE_INVERT);
+    gpio_set_irqover(SCL_DETECT_PIN, GPIO_OVERRIDE_INVERT);
     gpio_pull_up(SCL_DETECT_PIN);
 
-    // Initialize the READER_RUN input pin
+    // Initialize the READER_RUN input pin and arrange to receive an 
+    // interrupt when it transitions to active.
+    //
+    // NOTE: As seen by the Pico, the READER_RUN input is active-low, i.e.
+    // a low (GND) value on the READER_RUN pin indicates the PDP-11 has
+    // activated its READER RUN + output.  As a convenience, 
+    // GPIO_OVERRIDE_INVERT is used to make the active state appear as 1
+    // when read by gpio_get().
     gpio_init(READER_RUN_PIN);
     gpio_set_dir(READER_RUN_PIN, GPIO_IN);
     gpio_set_inover(READER_RUN_PIN, GPIO_OVERRIDE_INVERT);
+    gpio_set_irqover(READER_RUN_PIN, GPIO_OVERRIDE_INVERT);
     gpio_pull_up(READER_RUN_PIN);
-    sLastReaderRun = gpio_get(READER_RUN_PIN);
+    gpio_add_raw_irq_handler(READER_RUN_PIN, HandleReaderRunIRQ);
+    gpio_set_irq_enabled(READER_RUN_PIN, GPIO_IRQ_EDGE_RISE, true);
+    irq_set_enabled(IO_IRQ_BANK0, true);
 }
 
 void SCLPort::SetConfig(const SerialConfig& serialConfig)
@@ -76,20 +90,23 @@ bool SCLPort::CheckConnected(void)
     return connected;
 }
 
-void SCLPort::ClearReaderRun(void)
-{
-    sLastReaderRun = gpio_get(READER_RUN_PIN);
-}
-
 bool SCLPort::ReaderRunRequested(void)
 {
-    bool readerRun = gpio_get(READER_RUN_PIN);
-    bool readerRunReq = (readerRun && !sLastReaderRun);
-    sLastReaderRun = readerRun;
-    return readerRunReq;
+    if (sReaderRunRequested) {
+        sReaderRunRequested = false;
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
-static void ConfigSCLClock(uint32_t bitRate)
+void SCLPort::ClearReaderRunRequested(void)
+{
+    sReaderRunRequested = false;
+}
+
+void SCLPort::ConfigSCLClock(uint32_t bitRate)
 {
     // Compute the SCL clock rate from the configured baud rate.
     uint32_t sclClockRate = bitRate * 16;
@@ -109,4 +126,12 @@ static void ConfigSCLClock(uint32_t bitRate)
     // Set the PWM comparator value (a.k.a. "level") to half the wrap
     // value (i.e. 50% duty cycle).
     pwm_set_gpio_level(SCL_CLOCK_PIN, (pwmWrapValue + 1) / 2);
+}
+
+void SCLPort::HandleReaderRunIRQ(void)
+{
+    if ((gpio_get_irq_event_mask(READER_RUN_PIN) & GPIO_IRQ_EDGE_RISE) != 0) {
+        gpio_acknowledge_irq(READER_RUN_PIN, GPIO_IRQ_EDGE_RISE);
+        sReaderRunRequested = true;
+    }
 }

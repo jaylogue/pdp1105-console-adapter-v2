@@ -15,8 +15,8 @@ public:
     void Init(void);
     void SetConfig(const SerialConfig& serialConfig);
     bool CheckConnected(void);
-    void ClearReaderRun(void);
     bool ReaderRunRequested(void);
+    void ClearReaderRunRequested(void);
 
     virtual char Read(void);
     virtual bool TryRead(char &ch);
@@ -24,6 +24,12 @@ public:
     virtual void Write(const char * str);
     virtual void Flush(void);
     virtual bool CanWrite(void);
+
+private:
+    static bool sReaderRunRequested;
+
+    static void ConfigSCLClock(uint32_t bitRate);
+    static void HandleReaderRunIRQ(void);
 };
 
 extern SCLPort gSCLPort;
