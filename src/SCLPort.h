@@ -34,6 +34,16 @@ private:
 
 extern SCLPort gSCLPort;
 
+inline bool SCLPort::ReaderRunRequested(void)
+{
+    return sReaderRunRequested;
+}
+
+inline void SCLPort::ClearReaderRunRequested(void)
+{
+    sReaderRunRequested = false;
+}
+
 inline char SCLPort::Read(void)
 {
     char ch = uart_getc(SCL_UART);

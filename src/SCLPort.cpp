@@ -90,22 +90,6 @@ bool SCLPort::CheckConnected(void)
     return connected;
 }
 
-bool SCLPort::ReaderRunRequested(void)
-{
-    if (sReaderRunRequested) {
-        sReaderRunRequested = false;
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-void SCLPort::ClearReaderRunRequested(void)
-{
-    sReaderRunRequested = false;
-}
-
 void SCLPort::ConfigSCLClock(uint32_t bitRate)
 {
     // Compute the SCL clock rate from the configured baud rate.
