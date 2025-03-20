@@ -19,6 +19,7 @@ add_executable(pdp1105-console-adapter
     src/main.cpp
     src/TerminalMode.cpp
     src/MenuMode.cpp
+    src/DiagMode.cpp
     src/HostPort.cpp
     src/SCLPort.cpp
     src/AuxPort.cpp

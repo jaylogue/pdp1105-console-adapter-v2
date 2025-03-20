@@ -57,6 +57,8 @@ public:
 extern void TerminalMode(void);
 extern void MenuMode(Port& uiPort);
 extern void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName);
+extern void DiagMode_BasicIOTest(Port& uiPort);
+extern void DiagMode_ReaderRunTest(Port& uiPort);
 
 // ================================================================================
 // UTILITY FUNCTIONS
@@ -73,6 +75,7 @@ extern void WriteHostAuxPorts(const char* str);
 
 constexpr static uint16_t NO_ADDR = UINT16_MAX;
 constexpr static char CTRL_C = '\x03';
+constexpr static char CTRL_D = '\x04';
 constexpr static char BS = '\x08';
 constexpr static char DEL = '\x7F';
 constexpr static const char * RUBOUT = "\x08 \x08";

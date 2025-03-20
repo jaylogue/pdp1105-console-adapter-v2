@@ -38,6 +38,7 @@ static void UploadAndLoadFile(Port& uiPort);
 static void LoadPreviouslyUploadedFile(Port& uiPort);
 static char SelectFile(Port& uiPort, bool includeBootstrap);
 static const MenuItem * BuildFileMenu(bool includeBootstrap);
+static void DiagMenu(Port& uiPort);
 static void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCols = 2, int colWidth = -1, int colMargin = 2);
 static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection);
 static char GetMenuSelection(Port& uiPort, const MenuItem * menu);
@@ -57,6 +58,7 @@ void MenuMode(Port& uiPort)
         { 'q', "Return to terminal mode"        },
         { MENU_KEY, "Send menu character"       },
         MenuItem::HIDDEN(CTRL_C),
+        MenuItem::HIDDEN(CTRL_D),
         MenuItem::END
     };
 
@@ -80,6 +82,9 @@ void MenuMode(Port& uiPort)
         break;
     case 'l':
         LoadFile(uiPort);
+        break;
+    case CTRL_D:
+        DiagMenu(uiPort);
         break;
     default:
         break;
@@ -313,6 +318,34 @@ const MenuItem * BuildFileMenu(bool includeBootstrap)
     return sFileMenu;
 }
 
+void DiagMenu(Port& uiPort)
+{
+    static const MenuItem sDiagMenu[] = {
+        { 'b', "BASIC I/O TEST"                 },
+        { 'r', "READER RUN INTERFACE TEST"      },
+        MenuItem::SEPARATOR(),
+        { 'q', "Return to terminal mode"        },
+        MenuItem::HIDDEN(CTRL_C),
+        MenuItem::END
+    };
+
+    uiPort.Write("\r\n");
+    ShowMenu(uiPort, "*** DIAG MENU:", sDiagMenu, 2, 26, 2);
+
+    char sel = GetMenuSelection(uiPort, sDiagMenu);
+
+    switch (sel) {
+    case 'b':
+        DiagMode_BasicIOTest(uiPort);
+        break;
+    case 'r':
+        DiagMode_ReaderRunTest(uiPort);
+        break;
+    default:
+        break;
+    }
+}
+
 void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCols, int colWidth, int colMargin)
 {
     // Compute minimal column width if not specified
@@ -363,7 +396,7 @@ void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCo
                 auto item = menu + i;
 
                 // Pad the previous column out to the column width and add the
-                // column margin (whitespace between columns)
+                // column margin (whitespace before column)
                 uiPort.Printf("%-*s", padding + colMargin, "");
 
                 // Print the current menu item, translating control character
