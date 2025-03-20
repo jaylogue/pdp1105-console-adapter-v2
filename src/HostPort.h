@@ -28,22 +28,30 @@ extern HostPort gHostPort;
 
 inline char HostPort::Read(void)
 {
-    return stdio_getchar();
+    char ch = stdio_getchar();
+    ActivityLED::SysActive();
+    return ch;
 }
 
 inline bool HostPort::TryRead(char& ch)
 {
-    return stdio_get_until(&ch, 1, 0) == 1;
+    if (stdio_get_until(&ch, 1, 0) == 1) {
+        ActivityLED::SysActive();
+        return true;
+    }
+    return false;
 }
 
 inline void HostPort::Write(char ch)
 {
     stdio_putchar_raw(ch);
+    ActivityLED::SysActive();
 }
 
 inline void HostPort::Write(const char * str)
 {
     stdio_put_string(str, strlen(str), false, false);
+    ActivityLED::SysActive();
 }
 
 inline void HostPort::Flush(void)

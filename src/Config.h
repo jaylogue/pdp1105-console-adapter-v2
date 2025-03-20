@@ -42,19 +42,22 @@
 // Input pin for "READER RUN +" signal from PDP-11/05 (F/06 on the SCL connector).
 #define READER_RUN_PIN 3
 
-// Activity LED pin.
-#define ACTIVITY_LED_PIN PICO_DEFAULT_LED_PIN
+// System Activity LED pin.
+#define SYS_ACTIVITY_LED_PIN 16
 
-// Minimum amount of time (in us) that the activity LED should remain either on or off.
-#define STATUS_LED_MIN_STATE_TIME_US 30000
+// Tx Activity LED pin.
+#define TX_ACTIVITY_LED_PIN 14
+
+// Rx Activity LED pin.
+#define RX_ACTIVITY_LED_PIN 15
+
+// Minimum amount of time (in us) that an activity LED should remain either on or off.
+#define LED_MIN_STATE_TIME_US 40000
 
 // PWM divisor (integral and fractional components).  These values were chosen to minimize
 // error in the SCL clock generator frequency over the range of supported baud rates.
 #define PWM_DIVISOR_INT 2
 #define PWM_DIVISOR_FRACT 3
-
-// Minimum amount of time (in ms) that the status LED should remain either on or off.
-#define STATUS_LED_MIN_STATE_TIME_MS 30
 
 // Maximum number of files
 // NOTE: must be <= available selection keys ('0'-'9' and 'a'-'z')

@@ -1,56 +1,73 @@
 #include "ConsoleAdapter.h"
 
-static absolute_time_t sLastLEDUpdateTime;
-static bool sActive;
+ActivityLED::LEDState ActivityLED::sTxLED;
+ActivityLED::LEDState ActivityLED::sRxLED;
+ActivityLED::LEDState ActivityLED::sSysLED;
 
 void ActivityLED::Init(void)
 {
-    // Setup activity LED pin
-    gpio_init(ACTIVITY_LED_PIN);
-    gpio_set_dir(ACTIVITY_LED_PIN, GPIO_OUT);
-    gpio_put(ACTIVITY_LED_PIN, true);
-    sLastLEDUpdateTime = get_absolute_time();
-}
+    // Setup Tx LED pin
+    gpio_init(TX_ACTIVITY_LED_PIN);
+    gpio_set_dir(TX_ACTIVITY_LED_PIN, GPIO_OUT);
+    sTxLED.GPIO = TX_ACTIVITY_LED_PIN;
 
-void ActivityLED::TxActive(void)
-{
-    sActive = true;
-}
+    // Setup Rx LED pin
+    gpio_init(RX_ACTIVITY_LED_PIN);
+    gpio_set_dir(RX_ACTIVITY_LED_PIN, GPIO_OUT);
+    sRxLED.GPIO = RX_ACTIVITY_LED_PIN;
 
-void ActivityLED::RxActive(void)
-{
-    sActive = true;
-}
+    // Setup system activity LED pin
+    //   NOTE: System activity LED is inverted (normally ON, active OFF)
+    //   so that it doubles as a power indicator.
+    gpio_init(SYS_ACTIVITY_LED_PIN);
+    gpio_set_dir(SYS_ACTIVITY_LED_PIN, GPIO_OUT);
+    gpio_set_outover(SYS_ACTIVITY_LED_PIN, GPIO_OVERRIDE_INVERT);
+    gpio_set_inover(SYS_ACTIVITY_LED_PIN, GPIO_OVERRIDE_INVERT);
+    sSysLED.GPIO = SYS_ACTIVITY_LED_PIN;
 
-void ActivityLED::SysActive(void)
-{
-    sActive = true;
+    // Setup Pico onboard LED pin to track system activity LED
+#ifdef PICO_DEFAULT_LED_PIN
+    gpio_init(PICO_DEFAULT_LED_PIN);
+    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+#if !PICO_DEFAULT_LED_PIN_INVERTED
+    gpio_set_outover(PICO_DEFAULT_LED_PIN, GPIO_OVERRIDE_INVERT);
+    gpio_set_inover(PICO_DEFAULT_LED_PIN, GPIO_OVERRIDE_INVERT);
+#endif
+#endif // PICO_DEFAULT_LED_PIN
+
+    UpdateState();
 }
 
 void ActivityLED::UpdateState(void)
 {
-    absolute_time_t now = get_absolute_time();
-    bool ledState = gpio_get(ACTIVITY_LED_PIN);
-    int64_t ledStateDur = absolute_time_diff_us(sLastLEDUpdateTime, now);
+    sTxLED.UpdateState();
+    sRxLED.UpdateState();
+    sSysLED.UpdateState();
+}
 
-    // If there is activity, and activity LED is currently ON and has been for
-    // the minimum time, turn it OFF to signal activity to the user.
-    if (sActive) {
-        if (ledState && ledStateDur >= STATUS_LED_MIN_STATE_TIME_US) {
-            gpio_put(ACTIVITY_LED_PIN, false);
-            sLastLEDUpdateTime = now;
+void ActivityLED::LEDState::UpdateState(void)
+{
+    uint64_t now = time_us_64();
+    uint64_t ledStateDur = now - LastUpdateTime;
+
+    // If the LED has been in the current state for the minimum amount of time...
+    if (ledStateDur >= LED_MIN_STATE_TIME_US) {
+
+        // If the LED is not in the desired state, update its state and note the
+        // time.
+        if (gpio_get(GPIO) != IsActive) {
+            gpio_put(GPIO, IsActive);
+            LastUpdateTime = now;
+
+            // Update Pico onboard LED to track system activity LED
+#ifdef PICO_DEFAULT_LED_PIN
+            if (GPIO == SYS_ACTIVITY_LED_PIN) {
+                gpio_put(PICO_DEFAULT_LED_PIN, IsActive);
+            }
+#endif
         }
     }
 
-    // Otherwise, if there is no activity, and the activity LED is currently OFF
-    // and has been for the minimum time, turn it back ON again.
-    else {
-        if (!ledState && ledStateDur >= STATUS_LED_MIN_STATE_TIME_US)
-        {
-            gpio_put(ACTIVITY_LED_PIN, true);
-            sLastLEDUpdateTime = now;
-        }
-    }
-
-    sActive = false;
+    // Reset the active flag
+    IsActive = false;
 }

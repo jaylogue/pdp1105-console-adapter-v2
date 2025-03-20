@@ -29,22 +29,31 @@ extern AuxPort gAuxPort;
 
 inline char AuxPort::Read(void)
 {
-    return uart_getc(AUX_TERM_UART);
+    char ch = uart_getc(AUX_TERM_UART);
+    ActivityLED::SysActive();
+    return ch;
 }
 
 inline bool AuxPort::TryRead(char& ch)
 {
-    return (uart_is_readable(AUX_TERM_UART)) ? (ch = uart_getc(AUX_TERM_UART), true) : false;
+    if (uart_is_readable(AUX_TERM_UART)) {
+        ch = uart_getc(AUX_TERM_UART);
+        ActivityLED::SysActive();
+        return true;
+    }
+    return false;
 }
 
 inline void AuxPort::Write(char ch)
 {
     uart_putc(AUX_TERM_UART, ch);
+    ActivityLED::SysActive();
 }
 
 inline void AuxPort::Write(const char* str)
 {
     uart_puts(AUX_TERM_UART, str);
+    ActivityLED::SysActive();
 }
 
 inline void AuxPort::Flush(void)

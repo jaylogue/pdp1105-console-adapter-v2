@@ -48,6 +48,7 @@ inline char SCLPort::Read(void)
 {
     char ch = uart_getc(SCL_UART);
     ActivityLED::TxActive();
+    ActivityLED::SysActive();
     return ch;
 }
 
@@ -56,6 +57,7 @@ inline bool SCLPort::TryRead(char& ch)
     if (uart_is_readable(SCL_UART)) {
         ch = uart_getc(SCL_UART);
         ActivityLED::TxActive();
+        ActivityLED::SysActive();
         return true;
     }
     return false;
@@ -65,12 +67,14 @@ inline void SCLPort::Write(char ch)
 {
     uart_putc(SCL_UART, ch);
     ActivityLED::RxActive();
+    ActivityLED::SysActive();
 }
 
 inline void SCLPort::Write(const char* str)
 {
     uart_puts(SCL_UART, str);
     ActivityLED::RxActive();
+    ActivityLED::SysActive();
 }
 
 inline void SCLPort::Flush(void)
