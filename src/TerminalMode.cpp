@@ -1,5 +1,7 @@
 #include "ConsoleAdapter.h"
+#include "Settings.h"
 
+static void HandleHostSerialConfigChange(void);
 static void UpdateProgressBar(Port *lastUIPort);
 static void ClearProgressBar(void);
 
@@ -26,12 +28,7 @@ void TerminalMode(void)
 
         // Handle requests from the USB host to change the serial configuration.
         if (gHostPort.SerialConfigChanged()) {
-            SerialConfig serialConfig;
-            gHostPort.GetSerialConfig(serialConfig);
-            gSCLPort.SetConfig(serialConfig);
-#if defined(AUX_TERM_UART)
-            gAuxPort.SetConfig(serialConfig);
-#endif
+            HandleHostSerialConfigChange();
         }
 
         // If the PDP-11 has triggered the READER RUN line and there's data
@@ -73,6 +70,23 @@ void TerminalMode(void)
     }
 }
 
+void HandleHostSerialConfigChange(void)
+{
+    SerialConfig newConfig;
+
+    gHostPort.GetSerialConfig(newConfig);
+
+    if (Settings::SCLConfigFollowsHost) {
+        gSCLPort.SetConfig(newConfig);
+    }
+
+#if defined(AUX_TERM_UART)
+    if (Settings::AuxConfigFollowsHost) {
+        gAuxPort.SetConfig(newConfig);
+    }
+#endif
+}
+
 void UpdateProgressBar(Port * lastUIPort)
 {
     if (PaperTapeReader::IsMounted()) {
@@ -85,6 +99,12 @@ void UpdateProgressBar(Port * lastUIPort)
 
         // Initialize the progress bar if needed...
         if (sProgressBarState == PROGRESS_BAR_INACTIVE) {
+
+            // Only display progress bar if enabled
+            if (!Settings::ShouldShowPTRProgress(lastUIPort)) {
+                return;
+            }
+
             sProgressBarState = 0;
             sProgressBarPort = lastUIPort;
 

@@ -20,18 +20,24 @@
  */
 
 #include "ConsoleAdapter.h"
+#include "Settings.h"
  
 int main()
 {
-    // Initialize the host interface
+    // Initialize access to persisted settings
+    Settings::Init();
+
+    // Initialize the host USB interface
     gHostPort.Init();
 
-    // Initialize the SCL port
+    // Initialize the SCL port and set the initial serial configuration
     gSCLPort.Init();
+    gSCLPort.SetConfig(Settings::SCLConfig);
 
 #if defined(AUX_TERM_UART)
-    // Initialize the Aux Terminal port
+    // Initialize the Aux Terminal port and set the initial serial configuration
     gAuxPort.Init();
+    gAuxPort.SetConfig(Settings::AuxConfig);
 #endif
 
     // Initialize access to built-in files.

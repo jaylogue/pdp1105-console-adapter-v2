@@ -9,11 +9,16 @@
 #include "LDADataSource.h"
 #include "SimpleDataSource.h"
 #include "UploadFileMode.h"
+#include "Settings.h"
+
+#define INPUT_PROMPT    ">>> "
+#define MENU_PREFIX     "*** "
 
 struct MenuItem
 {
     char Selector;
     const char * Text;
+    const char * Value;
 
     static const MenuItem END;
     static const MenuItem SEPARATOR(const char * text = "-----")  { return (MenuItem) { '-', text }; }
@@ -38,13 +43,19 @@ static void UploadAndLoadFile(Port& uiPort);
 static void LoadPreviouslyUploadedFile(Port& uiPort);
 static char SelectFile(Port& uiPort, bool includeBootstrap);
 static const MenuItem * BuildFileMenu(bool includeBootstrap);
+static void SettingsMenu(Port& uiPort);
 static void DiagMenu(Port& uiPort);
 static void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCols = 2, int colWidth = -1, int colMargin = 2);
-static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection);
-static char GetMenuSelection(Port& uiPort, const MenuItem * menu);
+static char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection, const char * prompt = INPUT_PROMPT, bool echoSel = true);
+static char GetMenuSelection(Port& uiPort, const MenuItem * menu, const char * prompt = INPUT_PROMPT, bool echoSel = true);
 static bool IsValidMenuSelection(const MenuItem * menu, char sel);
 static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
 static bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal);
+static bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig);
+static bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressBar);
+static const char * ToString(const SerialConfig& serialConfig, char * buf, size_t bufSize);
+static const char * ToString(bool val, char * buf, size_t bufSize);
+static const char * ToString(Settings::ShowPTRProgress_t val, char * buf, size_t bufSize);
 
 void MenuMode(Port& uiPort)
 {
@@ -55,17 +66,17 @@ void MenuMode(Port& uiPort)
         { 'l', "Load file using M93xx console"  },
         { 'S', "Adapter settings"               },
         MenuItem::SEPARATOR(),
-        { 'q', "Return to terminal mode"        },
+        { '\e', "Return to terminal mode"        },
         { MENU_KEY, "Send menu character"       },
         MenuItem::HIDDEN(CTRL_C),
         MenuItem::HIDDEN(CTRL_D),
         MenuItem::END
     };
 
-    uiPort.Write("\r\n");
-    ShowMenu(uiPort, "*** MAIN MENU:", sMainMenu, 2, 26, 2);
+    ShowMenu(uiPort, "\r\n" MENU_PREFIX "MAIN MENU:", sMainMenu, 2, 26, 2);
 
     char sel = GetMenuSelection(uiPort, sMainMenu);
+    uiPort.Write("\r\n");
 
     switch (sel) {
     case MENU_KEY:
@@ -82,6 +93,9 @@ void MenuMode(Port& uiPort)
         break;
     case 'l':
         LoadFile(uiPort);
+        break;
+    case 'S':
+        SettingsMenu(uiPort);
         break;
     case CTRL_D:
         DiagMenu(uiPort);
@@ -110,6 +124,8 @@ void MountPaperTape(Port& uiPort)
     size_t fileLen;
     
     char sel = SelectFile(uiPort, false);
+    uiPort.Write("\r\n");
+
     switch (sel) {
     case 'A':
         fileName = "Absolute Loader";
@@ -127,6 +143,7 @@ void MountPaperTape(Port& uiPort)
         fileLen = gUploadedFileLen;
         break;
     case CTRL_C:
+    case '\e':
         return;
     default:
         FileSet::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
@@ -158,6 +175,7 @@ void LoadFile(Port& uiPort)
     size_t fileLen;
 
     char sel = SelectFile(uiPort, true);
+    uiPort.Write("\r\n");
 
     switch (sel) {
     case 'A':
@@ -278,13 +296,13 @@ void LoadPreviouslyUploadedFile(Port& uiPort)
 char SelectFile(Port& uiPort, bool includeBootstrap)
 {
     const MenuItem * fileMenu = BuildFileMenu(includeBootstrap);
-    ShowMenu(uiPort, "*** SELECT FILE:", fileMenu, 2, -1, 2);
+    ShowMenu(uiPort, "\r\n" MENU_PREFIX "SELECT FILE:", fileMenu, 2, -1, 2);
     return GetMenuSelection(uiPort, fileMenu);
 }
 
 const MenuItem * BuildFileMenu(bool includeBootstrap)
 {
-    static MenuItem sFileMenu[MAX_FILES + 7];
+    static MenuItem sFileMenu[MAX_FILES + 10];
 
     MenuItem * item = sFileMenu;
 
@@ -311,11 +329,79 @@ const MenuItem * BuildFileMenu(bool includeBootstrap)
         *item++ = (MenuItem){ 'P', "Previously uploaded file" };
     }
 
-    *item++ = (MenuItem){ CTRL_C, "Return to terminal mode" };
+    *item++ = (MenuItem){ '\e', "Return to terminal mode" };
+
+    *item++ = MenuItem::HIDDEN(CTRL_C);
 
     *item++ = MenuItem::END;
 
     return sFileMenu;
+}
+
+void SettingsMenu(Port& uiPort)
+{
+    SerialConfig serialConfig;
+
+    static char sSCLConfigValue[30];
+    static char sAuxConfigValue[30];
+    static char sSCLFollowsHostValue[30];
+    static char sAuxFollowsHostValue[30];
+    static char sShowPTRProgressValue[30];
+
+    static const MenuItem sSettingsMenu[] = {
+        { 's', "SCL serial config", sSCLConfigValue         },
+        { 'S', "SCL follows host",  sSCLFollowsHostValue    },
+        { 'p', "Show PTR progress", sShowPTRProgressValue   },
+        { 'a', "Aux serial config", sAuxConfigValue         },
+        { 'A', "Aux follows host",  sAuxFollowsHostValue    },
+        MenuItem::SEPARATOR(),
+        { '\e', "Return to terminal mode"                    },
+        MenuItem::HIDDEN(CTRL_C),
+        MenuItem::END
+    };
+
+    while (true) {
+
+        ToString(Settings::SCLConfig, sSCLConfigValue, sizeof(sSCLConfigValue));
+        ToString(Settings::AuxConfig, sAuxConfigValue, sizeof(sAuxConfigValue));
+        ToString(Settings::SCLConfigFollowsHost, sSCLFollowsHostValue, sizeof(sSCLFollowsHostValue));
+        ToString(Settings::AuxConfigFollowsHost, sAuxFollowsHostValue, sizeof(sAuxFollowsHostValue));
+        ToString(Settings::ShowPTRProgress, sShowPTRProgressValue, sizeof(sShowPTRProgressValue));
+
+        ShowMenu(uiPort, "\r\n" MENU_PREFIX "SETTINGS MENU:", sSettingsMenu, 2, 33, 2);
+
+        char sel = GetMenuSelection(uiPort, sSettingsMenu);
+        uiPort.Write("\r\n");
+
+        switch (sel) {
+        case 's':
+            if (!GetSerialConfig(uiPort, "\r\n" MENU_PREFIX "CHANGE SCL SERIAL CONFIG:", Settings::SCLConfig)) {
+                continue;
+            }
+            break;
+        case 'S':
+            Settings::SCLConfigFollowsHost = !Settings::SCLConfigFollowsHost;
+            break;
+        case 'a':
+            if (!GetSerialConfig(uiPort, "\r\n" MENU_PREFIX "CHANGE AUX SERIAL CONFIG:", Settings::AuxConfig)) {
+                continue;
+            }
+            break;
+        case 'A':
+            Settings::AuxConfigFollowsHost = !Settings::AuxConfigFollowsHost;
+            break;
+        case 'p':
+            if (!GetShowPTRProgress(uiPort, Settings::ShowPTRProgress)) {
+                continue;
+            }
+            break;
+        default:
+            return;
+        }
+
+        Settings::Save();
+        uiPort.Write("\r\nSettings saved\r\n");
+    }
 }
 
 void DiagMenu(Port& uiPort)
@@ -324,15 +410,15 @@ void DiagMenu(Port& uiPort)
         { 'b', "BASIC I/O TEST"                 },
         { 'r', "READER RUN INTERFACE TEST"      },
         MenuItem::SEPARATOR(),
-        { 'q', "Return to terminal mode"        },
+        { '\e', "Return to terminal mode"        },
         MenuItem::HIDDEN(CTRL_C),
         MenuItem::END
     };
 
-    uiPort.Write("\r\n");
-    ShowMenu(uiPort, "*** DIAG MENU:", sDiagMenu, 2, 26, 2);
+    ShowMenu(uiPort, "\r\n" MENU_PREFIX "DIAG MENU:", sDiagMenu, 2, 26, 2);
 
     char sel = GetMenuSelection(uiPort, sDiagMenu);
+    uiPort.Write("\r\n");
 
     switch (sel) {
     case 'b':
@@ -351,9 +437,12 @@ void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCo
     // Compute minimal column width if not specified
     if (colWidth < 0) {
         for (auto item = menu; !item->IsEnd(); item++) {
-            int itemWidth = (iscntrl(item->Selector) ? 6 : 1) // "Ctrl+x" or "x"
+            int itemWidth = (iscntrl(item->Selector) ? 6 : 1) // "CTRL+x" or "x"
                           + 2                                 // ": "
                           + strlen(item->Text);               // "<item-text>"
+            if (item->Value != NULL) {
+                itemWidth += strlen(item->Value);             // "<item-value>"
+            }
             if (colWidth < itemWidth) {
                 colWidth = itemWidth;
             }
@@ -385,7 +474,7 @@ void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCo
         }
 
         // Determine the number of rows needed to display group
-        size_t numRowsInGroup = (numItemsInGroup + 1) / numCols;
+        size_t numRowsInGroup = (numItemsInGroup + (numCols - 1)) / numCols;
 
         // Print each row...
         for (size_t row = 0; row < numRowsInGroup; row++) {
@@ -394,25 +483,49 @@ void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCo
             // Print each item in the current row...
             for (size_t i = row; i < numItemsInGroup; i += numRowsInGroup) {
                 auto item = menu + i;
+                int itemWidth = 0;
 
                 // Pad the previous column out to the column width and add the
                 // column margin (whitespace before column)
                 uiPort.Printf("%-*s", padding + colMargin, "");
 
-                // Print the current menu item, translating control character
-                // selectors to "Ctrl+x"
-                uiPort.Printf("%s%c: %s",
-                    (iscntrl(item->Selector)) ? "Ctrl+" : "",
-                    (iscntrl(item->Selector)) ? item->Selector + 0x40 : item->Selector,
-                    item->Text);
+                // Print the selector for the current menu item, translating control
+                // characters to printable text (e.g. "CTRL+x")
+                if (item->Selector == '\r') {
+                    uiPort.Write("ENTER");
+                    itemWidth += 5;
+                }
+                else if (item->Selector == '\e') {
+                    uiPort.Write("ESC");
+                    itemWidth += 3;
+                }
+                else if (iscntrl(item->Selector)) {
+                    uiPort.Write("CTRL+");
+                    uiPort.Write(item->Selector + 0x40);
+                    itemWidth += 6;
+                }
+                else {
+                    uiPort.Write(item->Selector);
+                    itemWidth += 1;
+                }
 
-                // Determine the width of the item just printed.
-                int itemWidth = (iscntrl(item->Selector) ? 6 : 1) +
-                              + 2
-                              + strlen(item->Text);
+                // Print the menu item text
+                uiPort.Write(") ");
+                uiPort.Write(item->Text);
+                itemWidth += (2 + strlen(item->Text));
+
+                // If the menu item has a value, print it right-justified in the 
+                // column.
+                if (item->Value != NULL) {
+                    int valueWidth = strlen(item->Value);
+                    int valuePadding = colWidth - (itemWidth + valueWidth);
+                    while (valuePadding-- > 0) { uiPort.Write('.'); }
+                    uiPort.Write(item->Value);
+                    itemWidth = colWidth;
+                }
 
                 // Arrange for necessary padding when printing the next column
-                padding = colWidth - itemWidth;
+                padding = MAX(colWidth - itemWidth, 0);
             }
 
             uiPort.Write("\r\n");
@@ -422,11 +535,11 @@ void ShowMenu(Port& uiPort, const char * title, const MenuItem * menu, int numCo
     }
 }
 
-char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection)
+char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection, const char * prompt, bool echoSel)
 {
     char ch;
 
-    uiPort.Write(": ");
+    uiPort.Write(prompt);
 
     while (true) {
         // Update the state of the activity LEDs
@@ -443,26 +556,32 @@ char GetMenuSelection(Port& uiPort, std::function<bool(char)> isValidSelection)
             break;
         }
 
-        uiPort.Write("?\x08");
+        if (echoSel) {
+            uiPort.Write("?\x08");
+        }
     }
 
-    if (isprint(ch)) {
-        uiPort.Write(ch);
+    if (echoSel) {
+        if (isprint(ch)) {
+            uiPort.Write(ch);
+        }
+        else if (ch == CTRL_C) {
+            uiPort.Write("^C");
+        }
+        else if (ch == '\e') {
+            uiPort.Write("ESC");
+        }
     }
-    else if (ch == CTRL_C) {
-        uiPort.Write("^C");
-    }
-    uiPort.Write("\r\n");
 
     return ch;
 }
 
-char GetMenuSelection(Port& uiPort, const MenuItem * menu)
+char GetMenuSelection(Port& uiPort, const MenuItem * menu, const char * prompt, bool echoSel)
 {
     auto isValidSel = [menu](char sel) -> bool {
         return IsValidMenuSelection(menu, sel);
     };
-    return GetMenuSelection(uiPort, isValidSel);
+    return GetMenuSelection(uiPort, isValidSel, prompt, echoSel);
 }
 
 bool IsValidMenuSelection(const MenuItem * menu, char sel)
@@ -480,7 +599,7 @@ bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW)
     static uint32_t sDefaultMemSizeKW = 28;
 
     do {
-        uiPort.Printf("*** ENTER SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
+        uiPort.Printf(INPUT_PROMPT "ENTER SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
         if (!GetInteger(uiPort, memSizeKW, 10, sDefaultMemSizeKW)) {
             return false;
         }
@@ -535,4 +654,127 @@ bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal)
             }
         }
     }
+}
+
+bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig)
+{
+    SerialConfig newSerialConfig = serialConfig;
+    char promptBuf[100];
+    char serialConfigBuf[12];
+
+    static const MenuItem sSerialConfigMenu[] = {
+        { '0', "110"   },
+        { '1', "300"   },
+        { '2', "600"   },
+        { '3', "1200"  },
+        { '4', "2400"  },
+        { '5', "4800"  },
+        { '6', "9600"  },
+        { '7', "19200" },
+        { '8', "38400" },
+        MenuItem::SEPARATOR(),
+        { 'a', "8-N-1" },
+        { 'b', "7-E-1" },
+        { 'c', "7-O-1" },
+        MenuItem::SEPARATOR(),
+        { '\r', "Accept"        },
+        { '\e', "Abort"        },
+        MenuItem::HIDDEN(CTRL_C),
+        MenuItem::END
+    };
+
+    newSerialConfig.StopBits = 1; // only one choice
+
+    ShowMenu(uiPort, title, sSerialConfigMenu, 3, -1, 2);
+
+    while (true) {
+        snprintf(promptBuf, sizeof(promptBuf), "\r" INPUT_PROMPT "%s  \r" INPUT_PROMPT,
+            ToString(newSerialConfig, serialConfigBuf, sizeof(serialConfigBuf)));
+
+        char sel = GetMenuSelection(uiPort, sSerialConfigMenu, promptBuf, false);
+
+        switch (sel) {
+        case '0': newSerialConfig.BitRate = 110;   break;
+        case '1': newSerialConfig.BitRate = 300;   break;
+        case '2': newSerialConfig.BitRate = 600;   break;
+        case '3': newSerialConfig.BitRate = 1200;  break;
+        case '4': newSerialConfig.BitRate = 2400;  break;
+        case '5': newSerialConfig.BitRate = 4800;  break;
+        case '6': newSerialConfig.BitRate = 9600;  break;
+        case '7': newSerialConfig.BitRate = 19200; break;
+        case '8': newSerialConfig.BitRate = 38400; break;
+        case 'a': newSerialConfig.DataBits = 8; newSerialConfig.Parity = SerialConfig::PARITY_NONE; break;
+        case 'b': newSerialConfig.DataBits = 7; newSerialConfig.Parity = SerialConfig::PARITY_EVEN; break;
+        case 'c': newSerialConfig.DataBits = 7; newSerialConfig.Parity = SerialConfig::PARITY_ODD;  break;
+        case '\r':
+            serialConfig = newSerialConfig;
+            return true;
+        case '\e':
+        case CTRL_C:
+            return false;
+        }
+    }
+}
+
+bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressBar)
+{
+    static const MenuItem sShowPTRProgressMenu[] = {
+        { 'o', "On"          },
+        { 'h', "Host-only"   },
+        { 'f', "Off"         },
+        MenuItem::HIDDEN(CTRL_C),
+        MenuItem::HIDDEN('\e'),
+        MenuItem::END
+    };
+
+    ShowMenu(uiPort, "\r\n" MENU_PREFIX "SHOW PAPER TAPE PROGRESS BAR:", sShowPTRProgressMenu, 3, -1, 2);
+
+    char sel = GetMenuSelection(uiPort, sShowPTRProgressMenu);
+
+    switch (sel) {
+    case 'o':
+        showProgressBar = Settings::ShowPTRProgress_Enabled;
+        return true;
+    case 'h':
+        showProgressBar = Settings::ShowPTRProgress_HostOnly;
+        return true;
+    case 'f':
+        showProgressBar = Settings::ShowPTRProgress_Disabled;
+        return true;
+    default:
+        return false;
+    }
+}
+
+const char * ToString(const SerialConfig& serialConfig, char * buf, size_t bufSize)
+{
+    snprintf(buf, bufSize, "%u-%u-%c-%u",
+        serialConfig.BitRate,
+        serialConfig.DataBits,
+        serialConfig.Parity == SerialConfig::PARITY_NONE ? 'N' : (serialConfig.Parity == SerialConfig::PARITY_EVEN ? 'E' : 'O'),
+        serialConfig.StopBits);
+    return buf;
+}
+
+const char * ToString(bool val, char * buf, size_t bufSize)
+{
+    if (bufSize > 0) {
+        strncpy(buf, (val) ? "on" : "off", bufSize);
+        buf[bufSize-1] = 0;
+    }
+    return buf;
+}
+
+const char * ToString(Settings::ShowPTRProgress_t val, char * buf, size_t bufSize)
+{
+    const char * valStr;
+
+    switch (Settings::ShowPTRProgress) {
+    case Settings::ShowPTRProgress_Enabled:  valStr = "on";        break;
+    case Settings::ShowPTRProgress_HostOnly: valStr = "host-only"; break;
+    default:
+    case Settings::ShowPTRProgress_Disabled: valStr = "off";       break;
+    }
+    strncpy(buf, valStr, bufSize);
+    return buf;
 }
