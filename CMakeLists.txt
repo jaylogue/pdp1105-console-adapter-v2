@@ -34,6 +34,7 @@ add_executable(pdp1105-console-adapter
     src/FileSet.cpp
     src/ActivityLED.cpp
     src/Settings.cpp
+    src/Menu.cpp
     src/Utils.cpp
     src/crc32.c
     external/async_xmodem/xmodem_server.c
