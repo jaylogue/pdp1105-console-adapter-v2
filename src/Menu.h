@@ -18,6 +18,12 @@ struct MenuItem
     bool IsSeparator(void) const { return !IsEnd() && Selector == '-'; }
     bool IsHidden(void) const { return !IsEnd() && Text[0] == 0; }
     bool IsSelectable(void) const { return !IsEnd() && !IsSeparator(); }
+
+private:
+    friend class Menu;
+
+    int PrintSelector(Port& uiPort) const;
+    int GetSelectorWidth(void) const;
 };
 
 struct Menu
@@ -32,6 +38,9 @@ struct Menu
     char GetSelection(Port& uiPort, const char * prompt = INPUT_PROMPT,
         bool echoSel = true, bool newline = true) const;
     bool IsValidSelection(char sel) const;
+
+private:
+    int GetColumnWidth(void) const;
 };
 
 #endif // MENU_H

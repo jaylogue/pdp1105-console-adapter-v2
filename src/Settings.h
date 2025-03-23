@@ -1,18 +1,18 @@
-#ifndef ADAPTER_SETTINGS_H
-#define ADAPTER_SETTINGS_H
+#ifndef SETTINGS_H
+#define SETTINGS_H
 
 class Settings final
 {
 public:
     static SerialConfig SCLConfig;
-    static bool SCLConfigFollowsHost;
+    static bool SCLConfigFollowsUSB;
 
     static SerialConfig AuxConfig;
-    static bool AuxConfigFollowsHost;
+    static bool AuxConfigFollowsUSB;
 
     enum ShowPTRProgress_t : uint8_t {
         ShowPTRProgress_Enabled,
-        ShowPTRProgress_HostOnly,
+        ShowPTRProgress_USBOnly,
         ShowPTRProgress_Disabled
     };
     static ShowPTRProgress_t ShowPTRProgress;
@@ -26,8 +26,8 @@ inline
 bool Settings::ShouldShowPTRProgress(const Port* uiPort)
 {
     return (ShowPTRProgress == ShowPTRProgress_Enabled ||
-            (ShowPTRProgress == ShowPTRProgress_HostOnly && uiPort == &gHostPort));
+            (ShowPTRProgress == ShowPTRProgress_USBOnly && uiPort == &gHostPort));
 }
 
 
-#endif // ADAPTER_SETTINGS_H
+#endif // SETTINGS_H

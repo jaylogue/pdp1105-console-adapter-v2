@@ -13,17 +13,17 @@ struct PersistedSettings_V1 final : public PersistedSettings
 {
     SerialConfig SCLConfig;
     SerialConfig AuxConfig;
-    bool SCLConfigFollowsHost;
-    bool AuxConfigFollowsHost;
+    bool SCLConfigFollowsUSB;
+    bool AuxConfigFollowsUSB;
     uint8_t ShowPTRProgress;
     uint32_t CheckSum;
 };
 
-SerialConfig Settings::SCLConfig = { DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
-bool Settings::SCLConfigFollowsHost;
+SerialConfig Settings::SCLConfig = { SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
+bool Settings::SCLConfigFollowsUSB = true;
 
-SerialConfig Settings::AuxConfig = { DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
-bool Settings::AuxConfigFollowsHost;
+SerialConfig Settings::AuxConfig = { AUX_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
+bool Settings::AuxConfigFollowsUSB;
 
 Settings::ShowPTRProgress_t Settings::ShowPTRProgress = Settings::ShowPTRProgress_Enabled;
 

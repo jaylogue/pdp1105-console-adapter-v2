@@ -129,6 +129,9 @@ void MountPaperTape(Port& uiPort)
     }
 
     PaperTapeReader::Mount(fileName, fileData, fileLen);
+
+    uiPort.Printf(MENU_PREFIX "MOUNTED PAPER TAPE: %s (%u bytes)\r\n", 
+        PaperTapeReader::TapeName(), PaperTapeReader::TapeLength());
 }
 
 void PaperTapeStatus(Port& uiPort)
@@ -167,6 +170,7 @@ void LoadFile(Port& uiPort)
         LoadPreviouslyUploadedFile(uiPort);
         break;
     case CTRL_C:
+    case '\e':
         break;
     default:
         FileSet::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
@@ -327,18 +331,18 @@ void SettingsMenu(Port& uiPort)
 
     static char sSCLConfigValue[30];
     static char sAuxConfigValue[30];
-    static char sSCLFollowsHostValue[30];
-    static char sAuxFollowsHostValue[30];
+    static char sSCLConfigFollowsUSBValue[30];
+    static char sAuxConfigFollowsHostValue[30];
     static char sShowPTRProgressValue[30];
 
     static const MenuItem sMenuItems[] = {
-        { 's', "SCL serial config", sSCLConfigValue         },
-        { 'S', "SCL follows host",  sSCLFollowsHostValue    },
-        { 'p', "Show PTR progress", sShowPTRProgressValue   },
-        { 'a', "Aux serial config", sAuxConfigValue         },
-        { 'A', "Aux follows host",  sAuxFollowsHostValue    },
+        { 's', "SCL port config",   sSCLConfigValue             },
+        { 'S', "SCL follows USB",   sSCLConfigFollowsUSBValue   },
+        { 'p', "Show PTR progress", sShowPTRProgressValue       },
+        { 'a', "Aux port config",   sAuxConfigValue             },
+        { 'A', "Aux follows USB",   sAuxConfigFollowsHostValue  },
         MenuItem::SEPARATOR(),
-        { '\e', "Return to terminal mode"                    },
+        { '\e', "Return to terminal mode"                       },
         MenuItem::HIDDEN(CTRL_C),
         MenuItem::END()
     };
@@ -354,28 +358,28 @@ void SettingsMenu(Port& uiPort)
 
         ToString(Settings::SCLConfig, sSCLConfigValue, sizeof(sSCLConfigValue));
         ToString(Settings::AuxConfig, sAuxConfigValue, sizeof(sAuxConfigValue));
-        ToString(Settings::SCLConfigFollowsHost, sSCLFollowsHostValue, sizeof(sSCLFollowsHostValue));
-        ToString(Settings::AuxConfigFollowsHost, sAuxFollowsHostValue, sizeof(sAuxFollowsHostValue));
+        ToString(Settings::SCLConfigFollowsUSB, sSCLConfigFollowsUSBValue, sizeof(sSCLConfigFollowsUSBValue));
+        ToString(Settings::AuxConfigFollowsUSB, sAuxConfigFollowsHostValue, sizeof(sAuxConfigFollowsHostValue));
         ToString(Settings::ShowPTRProgress, sShowPTRProgressValue, sizeof(sShowPTRProgressValue));
 
         sMenu.Show(uiPort);
 
         switch (sMenu.GetSelection(uiPort)) {
         case 's':
-            if (!GetSerialConfig(uiPort, "CHANGE SCL SERIAL CONFIG:", Settings::SCLConfig)) {
+            if (!GetSerialConfig(uiPort, "CHANGE SCL PORT CONFIG:", Settings::SCLConfig)) {
                 continue;
             }
             break;
         case 'S':
-            Settings::SCLConfigFollowsHost = !Settings::SCLConfigFollowsHost;
+            Settings::SCLConfigFollowsUSB = !Settings::SCLConfigFollowsUSB;
             break;
         case 'a':
-            if (!GetSerialConfig(uiPort, "CHANGE AUX SERIAL CONFIG:", Settings::AuxConfig)) {
+            if (!GetSerialConfig(uiPort, "CHANGE AUX PORT CONFIG:", Settings::AuxConfig)) {
                 continue;
             }
             break;
         case 'A':
-            Settings::AuxConfigFollowsHost = !Settings::AuxConfigFollowsHost;
+            Settings::AuxConfigFollowsUSB = !Settings::AuxConfigFollowsUSB;
             break;
         case 'p':
             if (!GetShowPTRProgress(uiPort, Settings::ShowPTRProgress)) {
@@ -559,9 +563,9 @@ bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfi
 bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressBar)
 {
     static const MenuItem sMenuItems[] = {
-        { 'o', "On"          },
-        { 'u', "USB interface only"   },
-        { 'f', "Off"         },
+        { '0', "On"                 },
+        { '1', "USB interface only" },
+        { '2', "Off"                },
         MenuItem::HIDDEN(CTRL_C),
         MenuItem::HIDDEN('\e'),
         MenuItem::END()
@@ -577,13 +581,13 @@ bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressB
     sMenu.Show(uiPort);
 
     switch (sMenu.GetSelection(uiPort)) {
-    case 'o':
+    case '0':
         showProgressBar = Settings::ShowPTRProgress_Enabled;
         return true;
-    case 'u':
-        showProgressBar = Settings::ShowPTRProgress_HostOnly;
+    case '1':
+        showProgressBar = Settings::ShowPTRProgress_USBOnly;
         return true;
-    case 'f':
+    case '2':
         showProgressBar = Settings::ShowPTRProgress_Disabled;
         return true;
     default:
@@ -615,10 +619,10 @@ const char * ToString(Settings::ShowPTRProgress_t val, char * buf, size_t bufSiz
     const char * valStr;
 
     switch (Settings::ShowPTRProgress) {
-    case Settings::ShowPTRProgress_Enabled:  valStr = "on";        break;
-    case Settings::ShowPTRProgress_HostOnly: valStr = "USB only"; break;
+    case Settings::ShowPTRProgress_Enabled:  valStr = "on";       break;
+    case Settings::ShowPTRProgress_USBOnly:  valStr = "USB only"; break;
     default:
-    case Settings::ShowPTRProgress_Disabled: valStr = "off";       break;
+    case Settings::ShowPTRProgress_Disabled: valStr = "off";      break;
     }
     strncpy(buf, valStr, bufSize);
     return buf;

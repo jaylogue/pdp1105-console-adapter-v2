@@ -16,27 +16,28 @@ project(pdp1105-console-adapter)
 pico_sdk_init()
 
 add_executable(pdp1105-console-adapter
-    src/main.cpp
-    src/TerminalMode.cpp
-    src/MenuMode.cpp
-    src/DiagMode.cpp
-    src/HostPort.cpp
-    src/SCLPort.cpp
-    src/AuxPort.cpp
-    src/PaperTapeReader.cpp
-    src/LoadFileMode.cpp
-    src/UploadFileMode.cpp
-    src/M93xxController.cpp
-    src/LDADataSource.cpp
-    src/SimpleDataSource.cpp
-    src/BootstrapLoader.cpp
     src/AbsoluteLoader.cpp
-    src/FileSet.cpp
     src/ActivityLED.cpp
-    src/Settings.cpp
-    src/Menu.cpp
-    src/Utils.cpp
+    src/AuxPort.cpp
+    src/BootstrapLoader.cpp
     src/crc32.c
+    src/DiagMode.cpp
+    src/FileSet.cpp
+    src/HostPort.cpp
+    src/LDADataSource.cpp
+    src/LoadFileMode.cpp
+    src/M93xxController.cpp
+    src/main.cpp
+    src/Menu.cpp
+    src/MenuMode.cpp
+    src/PaperTapeReader.cpp
+    src/PTRProgressBar.cpp
+    src/SCLPort.cpp
+    src/Settings.cpp
+    src/SimpleDataSource.cpp
+    src/TerminalMode.cpp
+    src/UploadFileMode.cpp
+    src/Utils.cpp
     external/async_xmodem/xmodem_server.c
 )
 

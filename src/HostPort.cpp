@@ -15,7 +15,7 @@ void HostPort::Init(void)
     stdio_usb_init();
     stdio_set_translate_crlf(&stdio_usb, false);
 
-    sSerialConfig = (SerialConfig){ DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
+    sSerialConfig = (SerialConfig){ SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
     sSerialConfigChanged = false;
 }
 

@@ -9,44 +9,30 @@
 
 void Menu::Show(Port& uiPort) const
 {
-    int colWidth = ColWidth;
+    int colWidth = GetColumnWidth();
 
-    // Compute minimal column width if not specified
-    if (colWidth < 0) {
-        for (auto item = Items; !item->IsEnd(); item++) {
-            int itemWidth = (iscntrl(item->Selector) ? 6 : 1) // "CTRL+x" or "x"
-                          + 2                                 // ": "
-                          + strlen(item->Text);               // "<item-text>"
-            if (item->Value != NULL) {
-                itemWidth += strlen(item->Value);             // "<item-value>"
-            }
-            if (colWidth < itemWidth) {
-                colWidth = itemWidth;
-            }
-        }
-    }
-
+    // Display the title
     uiPort.Printf("\r\n" MENU_PREFIX "%s\r\n", Title);
 
     // Render all the visible items in the menu
-    for (auto menu = Items; !menu->IsEnd(); ) {
+    for (auto item = Items; !item->IsEnd(); ) {
 
         // If the current item is hidden, skip it.
-        if (menu->IsHidden()) {
-            menu++;
+        if (item->IsHidden()) {
+            item++;
             continue;
         }
 
         // If the current item is a separator, print it and skip to the next item.
-        if (menu->IsSeparator()) {
-            uiPort.Printf("%-*s%s\r\n", ColMargin, "", menu->Text);
-            menu++;
+        if (item->IsSeparator()) {
+            uiPort.Printf("%-*s%s\r\n", ColMargin, "", item->Text);
+            item++;
             continue;
         }
 
         // Determine the number of menu items in the current group
         size_t numItemsInGroup = 0;
-        for (auto item = menu; item->IsSelectable() && !item->IsHidden(); item++) {
+        for (auto groupItem = item; groupItem->IsSelectable() && !groupItem->IsHidden(); groupItem++) {
             numItemsInGroup++;
         }
 
@@ -59,8 +45,7 @@ void Menu::Show(Port& uiPort) const
 
             // Print each item in the current row...
             for (size_t i = row; i < numItemsInGroup; i += numRowsInGroup) {
-                auto item = menu + i;
-                int itemWidth = 0;
+                auto rowItem = item + i;
 
                 // Pad the previous column out to the column width and add the
                 // column margin (whitespace before column)
@@ -68,36 +53,19 @@ void Menu::Show(Port& uiPort) const
 
                 // Print the selector for the current menu item, translating control
                 // characters to printable text (e.g. "CTRL+x")
-                if (item->Selector == '\r') {
-                    uiPort.Write("ENTER");
-                    itemWidth += 5;
-                }
-                else if (item->Selector == '\e') {
-                    uiPort.Write("ESC");
-                    itemWidth += 3;
-                }
-                else if (iscntrl(item->Selector)) {
-                    uiPort.Write("CTRL+");
-                    uiPort.Write(item->Selector + 0x40);
-                    itemWidth += 6;
-                }
-                else {
-                    uiPort.Write(item->Selector);
-                    itemWidth += 1;
-                }
+                int itemWidth = rowItem->PrintSelector(uiPort);
 
                 // Print the menu item text
-                uiPort.Write(") ");
-                uiPort.Write(item->Text);
-                itemWidth += (2 + strlen(item->Text));
+                uiPort.Write(rowItem->Text);
+                itemWidth += strlen(rowItem->Text);
 
                 // If the menu item has a value, print it right-justified in the 
                 // column.
-                if (item->Value != NULL) {
-                    int valueWidth = strlen(item->Value);
+                if (rowItem->Value != NULL) {
+                    int valueWidth = strlen(rowItem->Value);
                     int valuePadding = colWidth - (itemWidth + valueWidth);
                     while (valuePadding-- > 0) { uiPort.Write('.'); }
-                    uiPort.Write(item->Value);
+                    uiPort.Write(rowItem->Value);
                     itemWidth = colWidth;
                 }
 
@@ -108,7 +76,7 @@ void Menu::Show(Port& uiPort) const
             uiPort.Write("\r\n");
         }
 
-        menu += numItemsInGroup;
+        item += numItemsInGroup;
     }
 
     uiPort.Write("\r\n");
@@ -118,28 +86,34 @@ char Menu::GetSelection(Port& uiPort, const char * prompt, bool echoSel, bool ne
 {
     char ch;
 
+    // Display the prompt
     uiPort.Write(prompt);
 
     while (true) {
+
         // Update the state of the activity LEDs
         ActivityLED::UpdateState();
 
         // Update the connection status of the SCL port
         gSCLPort.CheckConnected();
 
+        // Wait until a character is available from the UI port
         if (!uiPort.TryRead(ch)) {
             continue;
         }
-    
+
+        // If the character is a valid selection, return it.
         if (IsValidSelection(ch)) {
             break;
         }
 
-        if (echoSel) {
+        // Otherwise print an error indicator ('?') if appropriate.
+        else if (echoSel) {
             uiPort.Write("?\x08");
         }
     }
 
+    // Echo the selection character if appropriate
     if (echoSel) {
         if (isprint(ch)) {
             uiPort.Write(ch);
@@ -152,6 +126,7 @@ char Menu::GetSelection(Port& uiPort, const char * prompt, bool echoSel, bool ne
         }
     }
 
+    // Start a new line if appropriate
     if (newline) {
         uiPort.Write("\r\n");
     }
@@ -167,4 +142,73 @@ bool Menu::IsValidSelection(char sel) const
         }
     }
     return false;
+}
+
+int Menu::GetColumnWidth(void) const
+{
+    int colWidth = ColWidth;
+
+    // Compute minimal column width if not specified
+    if (colWidth < 0) {
+        for (auto item = Items; !item->IsEnd(); item++) {
+            int itemWidth = item->GetSelectorWidth();   // "x) "
+            itemWidth += strlen(item->Text);            // <item-text>
+            if (item->Value != NULL) {
+                itemWidth += 1;                         // " "
+                itemWidth += strlen(item->Value);       // <item-value>
+            }
+            if (colWidth < itemWidth) {
+                colWidth = itemWidth;
+            }
+        }
+    }
+
+    return colWidth;
+}
+
+int MenuItem::PrintSelector(Port& uiPort) const
+{
+    int width;
+
+    // Print Selector text
+    if (Selector == '\r') {
+        uiPort.Write("ENTER");
+        width = 5;
+    }
+    else if (Selector == '\e') {
+        uiPort.Write("ESC");
+        width = 3;
+    }
+    else if (iscntrl(Selector)) {
+        uiPort.Write("CTRL+");
+        uiPort.Write(Selector + 0x40);
+        width = 6;
+    }
+    else {
+        uiPort.Write(Selector);
+        width = 1;
+    }
+
+    // Print separator
+    uiPort.Write(") ");
+    width += 2;
+
+    return width;
+}
+
+int MenuItem::GetSelectorWidth(void) const
+{
+    // Print Selector text
+    if (Selector == '\r') {
+        return 5 + 2;   // "ENTER) "
+    }
+    else if (Selector == '\e') {
+        return 3 + 2;  // "ESC) "
+    }
+    else if (iscntrl(Selector)) {
+        return 6 + 2;  // "CTRL+x) "
+    }
+    else {
+        return 1 + 2;  // "x) "
+    }
 }

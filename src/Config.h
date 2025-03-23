@@ -24,7 +24,8 @@
 // The SCL UART in the PDP-11/05 (e.g. an AY-5-1013) supports up to 40000 baud.
 #define MIN_BAUD_RATE 110
 #define MAX_BAUD_RATE 38400
-#define DEFAULT_BAUD_RATE 1200
+#define SCL_DEFAULT_BAUD_RATE 9600
+#define AUX_DEFAULT_BAUD_RATE 9600
 
 // Output pin for the "CLK IN (TTL)" signal to the PDP-11/05 (T/16 on the SCL connector).
 // This pin is used to clock the SCL UART inside the PDP-11, allowing the console adapter
@@ -71,5 +72,8 @@
 
 // Maximum size of an uploaded file
 #define MAX_UPLOAD_FILE_SIZE (64*1024)
+
+// Width of the paper tape reader progress bar
+#define PROGRESS_BAR_WIDTH 20
 
 #endif // CONFIG_H

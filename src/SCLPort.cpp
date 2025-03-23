@@ -10,7 +10,7 @@ bool SCLPort::sReaderRunRequested;
 
 void SCLPort::Init(void)
 {
-    const SerialConfig kDefaultConfig = { DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
+    const SerialConfig kDefaultConfig = { SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
 
     // Setup the SCL UART
     uart_init(SCL_UART, kDefaultConfig.BitRate);

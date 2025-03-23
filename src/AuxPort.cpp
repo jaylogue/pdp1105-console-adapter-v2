@@ -10,7 +10,7 @@ AuxPort gAuxPort;
 
 void AuxPort::Init(void)
 {
-    const SerialConfig kDefaultConfig = { DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
+    const SerialConfig kDefaultConfig = { AUX_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
 
     // Setup the auxilairy terminal UART
     uart_init(AUX_TERM_UART, kDefaultConfig.BitRate);
