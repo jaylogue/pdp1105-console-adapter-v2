@@ -13,8 +13,8 @@ public:
     HostPort& operator=(const HostPort&) = delete;
 
     void Init(void);
-    bool SerialConfigChanged(void);
-    void GetSerialConfig(SerialConfig& serialConfig);
+    const SerialConfig& GetConfig(void);
+    bool ConfigChanged(void);
 
     virtual char Read(void);
     virtual bool TryRead(char &ch);
@@ -22,6 +22,9 @@ public:
     virtual void Write(const char * str);
     virtual void Flush(void);
     virtual bool CanWrite(void);
+
+private:
+    static SerialConfig sSerialConfig;
 };
 
 extern HostPort gHostPort;

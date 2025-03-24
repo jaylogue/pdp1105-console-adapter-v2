@@ -15,6 +15,7 @@ public:
     AuxPort& operator=(const AuxPort&) = delete;
 
     void Init(void);
+    const SerialConfig& GetConfig(void);
     void SetConfig(const SerialConfig& serialConfig);
 
     virtual char Read(void);
@@ -23,9 +24,17 @@ public:
     virtual void Write(const char * str);
     virtual void Flush(void);
     virtual bool CanWrite(void);
+
+private:
+    static SerialConfig sConfig;
 };
 
 extern AuxPort gAuxPort;
+
+inline const SerialConfig& AuxPort::GetConfig(void)
+{
+    return sConfig;
+}
 
 inline char AuxPort::Read(void)
 {

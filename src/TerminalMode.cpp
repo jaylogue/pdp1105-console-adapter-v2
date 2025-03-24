@@ -15,7 +15,7 @@ void TerminalMode(void)
         gSCLPort.CheckConnected();
 
         // Handle requests from the USB host to change the serial configuration.
-        if (gHostPort.SerialConfigChanged()) {
+        if (gHostPort.ConfigChanged()) {
             HandleHostSerialConfigChange();
         }
 
@@ -60,9 +60,7 @@ void TerminalMode(void)
 
 void HandleHostSerialConfigChange(void)
 {
-    SerialConfig newConfig;
-
-    gHostPort.GetSerialConfig(newConfig);
+    SerialConfig newConfig = gHostPort.GetConfig();
 
     if (Settings::SCLConfigFollowsUSB) {
         gSCLPort.SetConfig(newConfig);

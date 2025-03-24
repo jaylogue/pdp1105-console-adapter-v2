@@ -13,6 +13,7 @@ public:
     SCLPort& operator=(const SCLPort&) = delete;
 
     void Init(void);
+    const SerialConfig& GetConfig(void);
     void SetConfig(const SerialConfig& serialConfig);
     bool CheckConnected(void);
     bool ReaderRunRequested(void);
@@ -26,6 +27,7 @@ public:
     virtual bool CanWrite(void);
 
 private:
+    static SerialConfig sConfig;
     static bool sReaderRunRequested;
 
     static void ConfigSCLClock(uint32_t bitRate);
@@ -33,6 +35,11 @@ private:
 };
 
 extern SCLPort gSCLPort;
+
+inline const SerialConfig& SCLPort::GetConfig(void)
+{
+    return sConfig;
+}
 
 inline bool SCLPort::ReaderRunRequested(void)
 {

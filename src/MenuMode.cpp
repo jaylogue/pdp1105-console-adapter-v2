@@ -13,7 +13,7 @@
 #include "Menu.h"
 
 static void MountPaperTape(Port& uiPort);
-static void PaperTapeStatus(Port& uiPort);
+static void AdapterStatus(Port& uiPort);
 static void LoadFile(Port& uiPort);
 static void LoadBootstrapLoader(Port& uiPort);
 static void LoadAbsoluteLoader(Port& uiPort);
@@ -38,7 +38,7 @@ void MenuMode(Port& uiPort)
     static const MenuItem sMenuItems[] = {
         { 'm', "Mount paper tape"               },
         { 'u', "Unmount paper tape"             },
-        { 's', "Paper tape status"              },
+        { 's', "Adapter status"                 },
         { 'l', "Load file using M93xx console"  },
         { 'S', "Adapter settings"               },
         MenuItem::SEPARATOR(),
@@ -69,7 +69,7 @@ void MenuMode(Port& uiPort)
         PaperTapeReader::Unmount();
         break;
     case 's':
-        PaperTapeStatus(uiPort);
+        AdapterStatus(uiPort);
         break;
     case 'l':
         LoadFile(uiPort);
@@ -134,18 +134,35 @@ void MountPaperTape(Port& uiPort)
         PaperTapeReader::TapeName(), PaperTapeReader::TapeLength());
 }
 
-void PaperTapeStatus(Port& uiPort)
+void AdapterStatus(Port& uiPort)
 {
-    uiPort.Write("*** PAPER TAPE STATUS:");
+    char buf[30];
+
+    uiPort.Write("\r\n" MENU_PREFIX "ADAPTER STATUS:\r\n");
+
+    uiPort.Printf("  SCL Port: %s (%s)\r\n",
+        ToString(gSCLPort.GetConfig(), buf, sizeof(buf)),
+        (Settings::SCLConfigFollowsUSB && gSCLPort.GetConfig() != Settings::SCLConfig) 
+            ? "set via USB"
+            : "default"
+    );
+
+    uiPort.Printf("  Aux Port: %s (%s)\r\n",
+        ToString(gAuxPort.GetConfig(), buf, sizeof(buf)),
+        (Settings::AuxConfigFollowsUSB && gAuxPort.GetConfig() != Settings::AuxConfig) 
+            ? "set via USB"
+            : "default"
+    );
+
     if (PaperTapeReader::IsMounted()) {
-        uiPort.Printf("\r\n  Tape Name: %s\r\n  Position: %" PRIu32 "/%" PRIu32 " (%" PRIu32 "%%)\r\n", 
-                      PaperTapeReader::TapeName(),
-                      PaperTapeReader::TapePosition(),
-                      PaperTapeReader::TapeLength(),
-                      PaperTapeReader::TapePosition() * 100 / PaperTapeReader::TapeLength());
+        uiPort.Printf("  Paper Tape Reader: %s\r\n    Position: %" PRIu32 "/%" PRIu32 " (%" PRIu32 "%%)\r\n", 
+            PaperTapeReader::TapeName(),
+            PaperTapeReader::TapePosition(),
+            PaperTapeReader::TapeLength(),
+            (PaperTapeReader::TapePosition() * 100) / PaperTapeReader::TapeLength());
     }
     else {
-        uiPort.Write(" No tape mounted\r\n");
+        uiPort.Write("  Paper Tape Reader: No tape mounted\r\n");
     }
 }
 
@@ -327,8 +344,6 @@ const Menu * BuildFileMenu(bool includeBootstrap)
 
 void SettingsMenu(Port& uiPort)
 {
-    SerialConfig serialConfig;
-
     static char sSCLConfigValue[30];
     static char sAuxConfigValue[30];
     static char sSCLConfigFollowsUSBValue[30];
@@ -336,11 +351,11 @@ void SettingsMenu(Port& uiPort)
     static char sShowPTRProgressValue[30];
 
     static const MenuItem sMenuItems[] = {
-        { 's', "SCL port config",   sSCLConfigValue             },
-        { 'S', "SCL follows USB",   sSCLConfigFollowsUSBValue   },
-        { 'p', "Show PTR progress", sShowPTRProgressValue       },
-        { 'a', "Aux port config",   sAuxConfigValue             },
-        { 'A', "Aux follows USB",   sAuxConfigFollowsHostValue  },
+        { 's', "Default SCL config", sSCLConfigValue            },
+        { 'S', "SCL follows USB",    sSCLConfigFollowsUSBValue  },
+        { 'p', "Show PTR progress",  sShowPTRProgressValue      },
+        { 'a', "Default Aux config", sAuxConfigValue            },
+        { 'A', "Aux follows USB",    sAuxConfigFollowsHostValue },
         MenuItem::SEPARATOR(),
         { '\e', "Return to terminal mode"                       },
         MenuItem::HIDDEN(CTRL_C),
@@ -350,12 +365,14 @@ void SettingsMenu(Port& uiPort)
         .Title = "SETTINGS MENU:",
         .Items = sMenuItems,
         .NumCols = 2,
-        .ColWidth = 33,
+        .ColWidth = 35,
         .ColMargin = 2
     };
 
     while (true) {
-
+        SerialConfig serialConfig;
+        bool reconfigPorts = false;
+    
         ToString(Settings::SCLConfig, sSCLConfigValue, sizeof(sSCLConfigValue));
         ToString(Settings::AuxConfig, sAuxConfigValue, sizeof(sAuxConfigValue));
         ToString(Settings::SCLConfigFollowsUSB, sSCLConfigFollowsUSBValue, sizeof(sSCLConfigFollowsUSBValue));
@@ -369,17 +386,21 @@ void SettingsMenu(Port& uiPort)
             if (!GetSerialConfig(uiPort, "CHANGE SCL PORT CONFIG:", Settings::SCLConfig)) {
                 continue;
             }
+            reconfigPorts = true;
             break;
         case 'S':
             Settings::SCLConfigFollowsUSB = !Settings::SCLConfigFollowsUSB;
+            reconfigPorts = true;
             break;
         case 'a':
             if (!GetSerialConfig(uiPort, "CHANGE AUX PORT CONFIG:", Settings::AuxConfig)) {
                 continue;
             }
+            reconfigPorts = true;
             break;
         case 'A':
             Settings::AuxConfigFollowsUSB = !Settings::AuxConfigFollowsUSB;
+            reconfigPorts = true;
             break;
         case 'p':
             if (!GetShowPTRProgress(uiPort, Settings::ShowPTRProgress)) {
@@ -392,6 +413,11 @@ void SettingsMenu(Port& uiPort)
 
         Settings::Save();
         uiPort.Write("Settings saved\r\n");
+
+        if (reconfigPorts) {
+            gSCLPort.SetConfig(Settings::SCLConfigFollowsUSB ? gHostPort.GetConfig() : Settings::SCLConfig);
+            gAuxPort.SetConfig(Settings::AuxConfigFollowsUSB ? gHostPort.GetConfig() : Settings::AuxConfig);
+        }
     }
 }
 

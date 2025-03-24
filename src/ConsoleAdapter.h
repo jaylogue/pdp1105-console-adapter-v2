@@ -37,6 +37,14 @@ struct SerialConfig final
     static constexpr uart_parity_t PARITY_NONE = UART_PARITY_NONE;
     static constexpr uart_parity_t PARITY_ODD  = UART_PARITY_ODD;
     static constexpr uart_parity_t PARITY_EVEN = UART_PARITY_EVEN;
+
+    bool operator==(const SerialConfig& other) const {
+        return BitRate == other.BitRate &&
+               DataBits == other.DataBits &&
+               StopBits == other.StopBits &&
+               Parity == other.Parity;
+    }
+    bool operator!=(const SerialConfig& other) const { return !(*this == other); }
 };
 
 class LoadDataSource

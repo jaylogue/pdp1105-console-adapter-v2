@@ -5,7 +5,7 @@
 
 HostPort gHostPort;
 
-static SerialConfig sSerialConfig;
+SerialConfig HostPort::sSerialConfig = { SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
 static bool sSerialConfigChanged;
 
 void HostPort::Init(void)
@@ -14,21 +14,22 @@ void HostPort::Init(void)
     // Disable automatic translation of CR/LF
     stdio_usb_init();
     stdio_set_translate_crlf(&stdio_usb, false);
-
-    sSerialConfig = (SerialConfig){ SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
-    sSerialConfigChanged = false;
 }
 
-bool HostPort::SerialConfigChanged(void)
+bool HostPort::ConfigChanged(void)
 {
-    cdc_line_coding_t lineConfig;
+    return sSerialConfigChanged;
+}
 
+const SerialConfig& HostPort::GetConfig(void)
+{
     if (sSerialConfigChanged) {
 
         sSerialConfigChanged = false;
 
         // Get the serial configuration sent from the host (known as the USB CDC line
         // coding configuration).
+        cdc_line_coding_t lineConfig;
         tud_cdc_get_line_coding(&lineConfig);
 
         // Accept the proposed baud rate if it is within the supported range.
@@ -52,34 +53,22 @@ bool HostPort::SerialConfigChanged(void)
             sSerialConfig.StopBits = 1;
         }
         else if (lineConfig.data_bits == 7 && 
-                    lineConfig.parity == CDC_LINE_CODING_PARITY_EVEN &&
-                    lineConfig.stop_bits == CDC_LINE_CODING_STOP_BITS_1) {
+                 lineConfig.parity == CDC_LINE_CODING_PARITY_EVEN &&
+                 lineConfig.stop_bits == CDC_LINE_CODING_STOP_BITS_1) {
             sSerialConfig.DataBits = 7;
             sSerialConfig.Parity = SerialConfig::PARITY_EVEN;
             sSerialConfig.StopBits = 1;
         }
         else if (lineConfig.data_bits == 7 && 
-                    lineConfig.parity == CDC_LINE_CODING_PARITY_ODD &&
-                    lineConfig.stop_bits == CDC_LINE_CODING_STOP_BITS_1) {
+                 lineConfig.parity == CDC_LINE_CODING_PARITY_ODD &&
+                 lineConfig.stop_bits == CDC_LINE_CODING_STOP_BITS_1) {
             sSerialConfig.DataBits = 7;
             sSerialConfig.Parity = SerialConfig::PARITY_ODD;
             sSerialConfig.StopBits = 1;
         }
-
-#if 0
-        stdio_printf("*** SERIAL CONFIG CHANGED: %u-%u-%c-%u\r\n", 
-            sSerialConfig.BitRate, sSerialConfig.DataBits, "NEO"[sSerialConfig.Parity], sSerialConfig.StopBits);
-#endif
-
-        return true;
     }
 
-    return false;
-}
-
-void HostPort::GetSerialConfig(SerialConfig& serialConfig)
-{
-    serialConfig = sSerialConfig;
+    return sSerialConfig;
 }
 
 // Called by the USB stack to signal that the USB host has changed the serial

@@ -6,14 +6,13 @@
 
 SCLPort gSCLPort;
 
+SerialConfig SCLPort::sConfig = { SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
 bool SCLPort::sReaderRunRequested;
 
 void SCLPort::Init(void)
 {
-    const SerialConfig kDefaultConfig = { SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
-
     // Setup the SCL UART
-    uart_init(SCL_UART, kDefaultConfig.BitRate);
+    uart_init(SCL_UART, sConfig.BitRate);
     uart_set_fifo_enabled(SCL_UART, true);
     gpio_set_function(SCL_UART_RX_PIN, UART_FUNCSEL_NUM(SCL_UART, SCL_UART_RX_PIN));
     gpio_set_function(SCL_UART_TX_PIN, UART_FUNCSEL_NUM(SCL_UART, SCL_UART_TX_PIN));
@@ -22,11 +21,11 @@ void SCLPort::Init(void)
     uint slice = pwm_gpio_to_slice_num(SCL_CLOCK_PIN);
     gpio_set_function(SCL_CLOCK_PIN, GPIO_FUNC_PWM);
     pwm_set_clkdiv_int_frac(slice, PWM_DIVISOR_INT, PWM_DIVISOR_FRACT);
-    ConfigSCLClock(kDefaultConfig.BitRate);
+    ConfigSCLClock(sConfig.BitRate);
     pwm_set_enabled(pwm_gpio_to_slice_num(SCL_CLOCK_PIN), true);
 
     // Configure the SCL UART
-    SetConfig(kDefaultConfig);
+    SetConfig(sConfig);
 
     // Initialize the SCL detect pin
     //
@@ -69,6 +68,8 @@ void SCLPort::SetConfig(const SerialConfig& serialConfig)
 
     // The SCL clock based on the new serial configuration.
     ConfigSCLClock(serialConfig.BitRate);
+
+    sConfig = serialConfig;
 }
 
 bool SCLPort::CheckConnected(void)
