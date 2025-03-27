@@ -64,7 +64,7 @@ void SCLPort::SetConfig(const SerialConfig& serialConfig)
 
     // Set the baud rate and format for the SCL UART
     uart_set_baudrate(SCL_UART, serialConfig.BitRate);
-    uart_set_format(SCL_UART, serialConfig.DataBits, serialConfig.StopBits, serialConfig.Parity);
+    uart_set_format(SCL_UART, serialConfig.DataBits, serialConfig.StopBits, (uart_parity_t)serialConfig.Parity);
 
     // The SCL clock based on the new serial configuration.
     ConfigSCLClock(serialConfig.BitRate);

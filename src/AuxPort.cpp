@@ -27,7 +27,7 @@ void AuxPort::SetConfig(const SerialConfig& serialConfig)
 
     // Set the baud rate and format for the auxilairy terminal UART
     uart_set_baudrate(AUX_TERM_UART, serialConfig.BitRate);
-    uart_set_format(AUX_TERM_UART, serialConfig.DataBits, serialConfig.StopBits, serialConfig.Parity);
+    uart_set_format(AUX_TERM_UART, serialConfig.DataBits, serialConfig.StopBits, (uart_parity_t)serialConfig.Parity);
 
     sConfig = serialConfig;
 }

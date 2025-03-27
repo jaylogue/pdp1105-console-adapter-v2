@@ -33,10 +33,10 @@ struct SerialConfig final
     uint32_t BitRate;
     uint8_t DataBits;
     uint8_t StopBits;
-    uart_parity_t Parity;
-    static constexpr uart_parity_t PARITY_NONE = UART_PARITY_NONE;
-    static constexpr uart_parity_t PARITY_ODD  = UART_PARITY_ODD;
-    static constexpr uart_parity_t PARITY_EVEN = UART_PARITY_EVEN;
+    uint8_t Parity;
+    static constexpr uint8_t PARITY_NONE = UART_PARITY_NONE;
+    static constexpr uint8_t PARITY_ODD  = UART_PARITY_ODD;
+    static constexpr uint8_t PARITY_EVEN = UART_PARITY_EVEN;
 
     bool operator==(const SerialConfig& other) const {
         return BitRate == other.BitRate &&
@@ -67,6 +67,7 @@ extern void MenuMode(Port& uiPort);
 extern void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName);
 extern void DiagMode_BasicIOTest(Port& uiPort);
 extern void DiagMode_ReaderRunTest(Port& uiPort);
+extern void DiagMode_SettingsTest(Port& uiPort);
 
 // ================================================================================
 // UTILITY FUNCTIONS

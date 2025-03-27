@@ -6,10 +6,6 @@ include($ENV{PICO_SDK_PATH}/pico_sdk_init.cmake)
 # set the location of the picotool command
 set(picotool_DIR $ENV{PICOTOOL_PATH})
 
-# Limit firmware size to half of overall flash size; 
-# remainder will be used for internal file storage.
-set(PICO_FLASH_SIZE_BYTES "1 * 1024 * 1024")
-
 project(pdp1105-console-adapter)
 
 # initialize the Raspberry Pi Pico SDK
@@ -49,6 +45,8 @@ target_link_libraries(pdp1105-console-adapter
     pico_stdlib
     hardware_pwm
 )
+
+pico_set_linker_script(pdp1105-console-adapter ${CMAKE_SOURCE_DIR}/src/pdp1105-console-adapter.ld)
 
 # Use USB console only
 pico_enable_stdio_usb(pdp1105-console-adapter ENABLED)

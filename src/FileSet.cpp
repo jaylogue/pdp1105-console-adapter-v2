@@ -1,3 +1,5 @@
+#pragma GCC optimize ("O0")
+
 #include <ctype.h>
 #include <inttypes.h>
 
@@ -5,7 +7,7 @@
 #include "FileSet.h"
 #include "crc32.h"
 
-struct FileHeader
+struct alignas(4) FileHeader final
 {
     uint32_t Checksum;
     uint32_t Length;
@@ -19,16 +21,20 @@ struct FileHeader
 const FileHeader * FileSet::sFileIndex[MAX_FILES];
 size_t FileSet::sNumFiles;
 
-// Area of Flash in which files are stored
-static const FileHeader * const sFileSetStart = (const FileHeader *)(XIP_BASE + 1 * 1024 * 1024);
-static const FileHeader * const sFileSetEnd   = (const FileHeader *)(XIP_BASE + PICO_FLASH_SIZE_BYTES);
+// Start and end of file storage area in flash.
+// Defined in linker script.
+extern uint8_t __FileStorageStart;
+extern uint8_t __FileStorageEnd;
 
 void FileSet::Init(void)
 {
-    // Scan the file set in flash for valid files and build an index
-    for (auto file = sFileSetStart; sNumFiles < MAX_FILES && file->IsValid(); file = file->Next()) {
+    // Scan the file storage area in flash for valid files and build an index
+    for (auto file = (const FileHeader *)&__FileStorageStart; file != NULL && file->IsValid(); file = file->Next()) {
         sFileIndex[sNumFiles] = file;
         sNumFiles++;
+        if (sNumFiles == MAX_FILES) {
+            break;
+        }
     }
 }
 
@@ -60,18 +66,32 @@ const char * FileSet::GetFileName(size_t index)
 
 bool FileHeader::IsValid(void) const
 {
-    // Verify the file header exists within the expected range of Flash
-    if (this < sFileSetStart || this >= sFileSetEnd) {
+    // Shouldn't happen, but check anyway
+    if (this == NULL) {
         return false;
     }
 
-    // Verify the Length value is sane
-    if (Length == 0 || Next() > sFileSetEnd) {
+    // Verify the file falls entirely within the expected flash range.
+    const uint8_t * fileStart = (const uint8_t *)this;
+    if (fileStart < &__FileStorageStart || fileStart >= &__FileStorageEnd) {
+        return false;
+    }
+    const uint8_t * fileHeaderEnd = fileStart + sizeof(FileHeader);
+    if (fileHeaderEnd > &__FileStorageEnd) {
+        return false;
+    }
+    const uint8_t * fileEnd = fileHeaderEnd + Length;
+    if (fileEnd > &__FileStorageEnd) {
+        return false;
+    }
+
+    // Verify the Length is sane
+    if (Length == 0) {
         return false;
     }
 
     // Verify the checksum
-    size_t checksumLen = Length + sizeof(FileHeader) - sizeof(Checksum);
+    size_t checksumLen = (sizeof(FileHeader) + Length) - sizeof(Checksum);
     uint32_t expectedChecksum = crc32((const uint8_t *)&Length, checksumLen);
     if (Checksum != expectedChecksum) {
         return false;
@@ -82,7 +102,25 @@ bool FileHeader::IsValid(void) const
 
 const FileHeader * FileHeader::Next(void) const
 {
-    intptr_t nextAddr = ((intptr_t)this) + sizeof(FileHeader) + Length;
-    nextAddr = (nextAddr + (alignof(FileHeader) - 1)) & ~(alignof(FileHeader) - 1);
-    return (const FileHeader *)nextAddr;
+    // Get a pointer to the file immediately following the current file.
+    auto nextFileStart = ((const uint8_t *)this) + sizeof(FileHeader) + Length;
+    nextFileStart = (const uint8_t *)
+        (((((uintptr_t)nextFileStart) + (alignof(FileHeader) - 1)) / alignof(FileHeader)) * alignof(FileHeader));
+
+    // Verify the next file falls entirely within the expected flash range.
+    // Return NULL if not.
+    if (nextFileStart < &__FileStorageStart || nextFileStart >= &__FileStorageEnd) {
+        return NULL;
+    }
+    const uint8_t * nextFileHeaderEnd = nextFileStart + sizeof(FileHeader);
+    if (nextFileHeaderEnd > &__FileStorageEnd) {
+        return NULL;
+    }
+    const FileHeader * nextFile = (const FileHeader *)nextFileStart;
+    const uint8_t * nextFileEnd = nextFileHeaderEnd + nextFile->Length;
+    if (nextFileEnd > &__FileStorageEnd) {
+        return NULL;
+    }
+
+    return nextFile;
 }

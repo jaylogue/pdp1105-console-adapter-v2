@@ -426,8 +426,9 @@ void DiagMenu(Port& uiPort)
     static const MenuItem sMenuItems[] = {
         { 'b', "BASIC I/O TEST"                 },
         { 'r', "READER RUN INTERFACE TEST"      },
+        { 's', "SETTINGS TEST"                  },
         MenuItem::SEPARATOR(),
-        { '\e', "Return to terminal mode"        },
+        { '\e', "Return to terminal mode"       },
         MenuItem::HIDDEN(CTRL_C),
         MenuItem::END()
     };
@@ -436,7 +437,7 @@ void DiagMenu(Port& uiPort)
         .Title = "DIAG MENU:",
         .Items = sMenuItems,
         .NumCols = 2,
-        .ColWidth = 26,
+        .ColWidth = -1,
         .ColMargin = 2
     };
 
@@ -448,6 +449,9 @@ void DiagMenu(Port& uiPort)
         break;
     case 'r':
         DiagMode_ReaderRunTest(uiPort);
+        break;
+    case 's':
+        DiagMode_SettingsTest(uiPort);
         break;
     default:
         break;

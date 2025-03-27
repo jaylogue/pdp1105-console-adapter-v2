@@ -1,5 +1,6 @@
 #include "ConsoleAdapter.h"
-
+#include "Settings.h"
+#include "Menu.h"
 
 void DiagMode_BasicIOTest(Port& uiPort)
 {
@@ -156,6 +157,48 @@ void DiagMode_ReaderRunTest(Port& uiPort)
                 localRRCount,
                 pdp11RRCount,
                 (mismatch) ? "[MISMATCH]" : "          ");
+        }
+    }
+}
+
+extern "C" uint8_t __SettingsStorageStart;
+extern "C" uint8_t __SettingsStorageEnd;
+
+void DiagMode_SettingsTest(Port& uiPort)
+{
+    static const MenuItem sMenuItems[] = {
+        { 's', "Save settings"                  },
+        { 't', "Save settings x10"      },
+        MenuItem::SEPARATOR(),
+        { '\e', "Return to terminal mode"       },
+        MenuItem::HIDDEN(CTRL_C),
+        MenuItem::END()
+    };
+
+    static const Menu sMenu = {
+        .Title = "SETTINGS TEST:",
+        .Items = sMenuItems,
+        .NumCols = 2,
+        .ColWidth = -1,
+        .ColMargin = 2
+    };
+
+    while (true) {
+        Settings::PrintStats(uiPort);
+
+        sMenu.Show(uiPort);
+
+        switch (sMenu.GetSelection(uiPort)) {
+        case 's':
+            Settings::Save();
+            break;
+        case 't':
+            for (int i = 0; i < 10; i++) {
+                Settings::Save();
+            }
+            break;
+        default:
+            return;
         }
     }
 }
