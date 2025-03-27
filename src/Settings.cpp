@@ -1,5 +1,3 @@
-#pragma GCC optimize ("O0")
-
 #include "ConsoleAdapter.h"
 #include "Settings.h"
 #include "Menu.h"

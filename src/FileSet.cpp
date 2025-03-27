@@ -1,5 +1,3 @@
-#pragma GCC optimize ("O0")
-
 #include <ctype.h>
 #include <inttypes.h>
 
