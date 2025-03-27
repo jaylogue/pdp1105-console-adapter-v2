@@ -1,3 +1,15 @@
+/*
+ * From Hacker's Delight (Addison-Wesley, 2003, 2012) with permission:
+ *
+ * https://web.archive.org/web/20190716204559/http://www.hackersdelight.org/permissions.htm
+ *
+ * "You are free to use, copy, and distribute any of the code on this
+ *  web site, whether modified by you or not. You need not give
+ *  attribution. This includes the algorithms (some of which appear in
+ *  Hacker's Delight), the Hacker's Assistant, and any code submitted
+ *  by readers. Submitters implicitly agree to this."
+ */
+
 #include "crc32.h"
 
 /* This is the basic CRC-32 calculation with some optimization but no
