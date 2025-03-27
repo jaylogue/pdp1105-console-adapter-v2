@@ -1,0 +1,7 @@
+*.code-workspace
+.vscode/
+output/
+pcb/*.xml
+pcb/*.kicad_prl
+pcb/fp-info-cache
+pcb/*-backups/
