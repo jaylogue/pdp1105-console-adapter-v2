@@ -37,11 +37,17 @@ UF2_PAYLOAD_SIZE = 256  # Size of data payload in each block
 UF2_DATA_SIZE = 476  # Size of data field in UF2 block (must be padded to this size)
 UF2_FAMILY_ID_RP2040 = 0xE48BFF56  # Family ID for RP2040
 
-# Default base address (extracted from FileSet.cpp)
-DEFAULT_BASE_ADDR = 0x10100000  # XIP_BASE (0x10000000) + 1 * 1024 * 1024
+# RPi Pico flash sector size in bytes
+PICO_FLASH_SECTOR_SIZE = 4096
 
-# RPi Pico flash page size in bytes
-PICO_FLASH_PAGE_SIZE = 4096
+# Base address of Pico flash area
+PICO_FLASH_BASE_ADDR = 0x10000000 # equal to XIP_BASE in Pico SDK
+
+# Total Pico flash size 
+PICO_TOTAL_FLASH_SIZE = 2 * 1024 * 1024
+
+# Default file set base address
+DEFAULT_BASE_ADDR = PICO_FLASH_BASE_ADDR + (PICO_TOTAL_FLASH_SIZE//2)
 
 def createHeader(name, length):
     """
@@ -94,7 +100,7 @@ def createUf2Block(addr, data, blockNo, totalBlocks, familyId=UF2_FAMILY_ID_RP20
     
     return block
 
-def buildFilesetImage(fileNames):
+def buildFilesetImage(fileNames, maxFilesetSize):
     """
     Build a binary file set image from the input files.
     """
@@ -141,6 +147,9 @@ def buildFilesetImage(fileNames):
         paddingSize = (HEADER_ALIGNMENT - (len(filesetImage) % HEADER_ALIGNMENT)) % HEADER_ALIGNMENT
         filesetImage += b'\0' * paddingSize
 
+        if len(filesetImage) > maxFilesetSize:
+            errorExit(f"File set is too large (max size is { maxFilesetSize / 1024 }KiB)")
+
     # Write an empty file header to mark the end of the file set
     filesetImage += b'\0' * HEADER_SIZE
 
@@ -150,8 +159,8 @@ def writeUf2File(outputFilePath, filesetImage, baseAddr):
     """
     Write the fileset image into a UF2 file using the specified base address.
     """
-    # Pad the image data to a multiple of the RPi Pico flash page size
-    paddingSize = (PICO_FLASH_PAGE_SIZE - (len(filesetImage) % PICO_FLASH_PAGE_SIZE)) % PICO_FLASH_PAGE_SIZE
+    # Pad the image data to a multiple of the RPi Pico flash sector size
+    paddingSize = (PICO_FLASH_SECTOR_SIZE - (len(filesetImage) % PICO_FLASH_SECTOR_SIZE)) % PICO_FLASH_SECTOR_SIZE
     if paddingSize > 0:
         filesetImage = filesetImage + bytearray(b'\0' * paddingSize)
     
@@ -188,14 +197,17 @@ def main():
         parser.add_argument('outputFile', metavar='<output-file>', help='Output flash image file (UF2 format)')
         parser.add_argument('inputFiles', metavar='<input-file>', nargs='+', help='Input paper tape files to include in the file set')
         parser.add_argument('--base-addr', type=lambda x: int(x, 0), default=DEFAULT_BASE_ADDR,
-                            help='Base address in flash (default: 0x{:08X})'.format(DEFAULT_BASE_ADDR))
-        
+                            help='Base address in flash for file set (default: 0x{:08X})'.format(DEFAULT_BASE_ADDR))
         args = parser.parse_args()
 
-        # Build the fileset binary
-        filesetImage = buildFilesetImage(args.inputFiles)
+        maxFilesetSize = (PICO_FLASH_BASE_ADDR + PICO_TOTAL_FLASH_SIZE) - args.base_addr
+
+        # Build the fileset memory image
+        filesetImage = buildFilesetImage(args.inputFiles, maxFilesetSize)
+
         print(f"File set created ({ len(args.inputFiles) } files, { len(filesetImage) } bytes)")
 
+        # Create a UF2 file to load the fileset into the target flash location.
         writeUf2File(args.outputFile, filesetImage, args.base_addr)
 
         print(f"Flash image file created: {args.outputFile} ({os.path.getsize(args.outputFile)} bytes)")
