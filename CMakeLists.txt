@@ -1,16 +1,18 @@
 cmake_minimum_required(VERSION 3.13)
 
-# include the SDK build script
+# Include the Pico SDK build script
 include($ENV{PICO_SDK_PATH}/pico_sdk_init.cmake)
 
-# set the location of the picotool command
+# Set the location of the picotool command
 set(picotool_DIR $ENV{PICOTOOL_PATH})
 
+# Declare console adapter project
 project(pdp1105-console-adapter)
 
-# initialize the Raspberry Pi Pico SDK
+# Initialize the Pico SDK
 pico_sdk_init()
 
+# Build console adapter executable
 add_executable(pdp1105-console-adapter
     src/AbsoluteLoader.cpp
     src/ActivityLED.cpp
@@ -37,20 +39,38 @@ add_executable(pdp1105-console-adapter
     external/async_xmodem/xmodem_server.c
 )
 
+# Additional include directories for building executable
 target_include_directories(pdp1105-console-adapter
     PRIVATE
         external/async_xmodem)
 
+# Additional Pico SDK libraries for linking executable
 target_link_libraries(pdp1105-console-adapter 
     pico_stdlib
-    hardware_pwm
-)
+    hardware_pwm)
 
+# Use custom application-specific linker script
 pico_set_linker_script(pdp1105-console-adapter ${CMAKE_SOURCE_DIR}/src/pdp1105-console-adapter.ld)
+
+# Add C #defines containing git commit id and branch
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_ID
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+target_compile_definitions(pdp1105-console-adapter
+    PRIVATE
+        GIT_COMMIT_ID="${GIT_COMMIT_ID}"
+        GIT_BRANCH="${GIT_BRANCH}")
 
 # Use USB console only
 pico_enable_stdio_usb(pdp1105-console-adapter ENABLED)
 pico_enable_stdio_uart(pdp1105-console-adapter DISABLED)
 
-# create map/bin/hex file etc.
+# Create map/bin/hex file etc.
 pico_add_extra_outputs(pdp1105-console-adapter)

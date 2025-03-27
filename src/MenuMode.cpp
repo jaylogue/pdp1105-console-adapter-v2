@@ -14,6 +14,7 @@
 
 static void MountPaperTape(Port& uiPort);
 static void AdapterStatus(Port& uiPort);
+static void AdapterVersion(Port& uiPort);
 static void LoadFile(Port& uiPort);
 static void LoadBootstrapLoader(Port& uiPort);
 static void LoadAbsoluteLoader(Port& uiPort);
@@ -41,6 +42,7 @@ void MenuMode(Port& uiPort)
         { 's', "Adapter status"                 },
         { 'l', "Load file using M93xx console"  },
         { 'S', "Adapter settings"               },
+        { 'v', "Adapter version"                },
         MenuItem::SEPARATOR(),
         { '\e', "Return to terminal mode"        },
         { MENU_KEY, "Send menu character"       },
@@ -52,7 +54,7 @@ void MenuMode(Port& uiPort)
         .Title = "MAIN MENU:",
         .Items = sMenuItems,
         .NumCols = 2,
-        .ColWidth = 26,
+        .ColWidth = 28,
         .ColMargin = 2
     };
 
@@ -76,6 +78,9 @@ void MenuMode(Port& uiPort)
         break;
     case 'S':
         SettingsMenu(uiPort);
+        break;
+    case 'v':
+        AdapterVersion(uiPort);
         break;
     case CTRL_D:
         DiagMenu(uiPort);
@@ -164,6 +169,17 @@ void AdapterStatus(Port& uiPort)
     else {
         uiPort.Write("  Paper Tape Reader: No tape mounted\r\n");
     }
+
+    uiPort.Write("  Software Build Time: " __DATE__ " " __TIME__ "\r\n"
+                 "  Commit Id: " GIT_COMMIT_ID "\r\n");
+}
+
+void AdapterVersion(Port& uiPort)
+{
+    uiPort.Write(
+        "\r\n" MENU_PREFIX "PDP-11/05 Console Adapter V2\r\n"
+        "  Build Time: " __DATE__ " " __TIME__ "\r\n"
+        "  Commit Id: " GIT_COMMIT_ID " (" GIT_BRANCH ")\r\n\r\n");
 }
 
 void LoadFile(Port& uiPort)
