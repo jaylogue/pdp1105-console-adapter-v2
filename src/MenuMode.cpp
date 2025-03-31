@@ -43,7 +43,7 @@ static const Menu * BuildFileMenu(bool includeBootstrap);
 static void SettingsMenu(Port& uiPort);
 static void DiagMenu(Port& uiPort);
 static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
-static bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal);
+static bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal);
 static bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig);
 static bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressBar);
 static const char * ToString(const SerialConfig& serialConfig, char * buf, size_t bufSize);
@@ -297,7 +297,7 @@ void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileDat
 
     SimpleDataSource dataSource(fileData, fileLen, loadAddr);
 
-    const char nameFormat[] = "%s (binary format, %u bytes, load address %06o)";
+    const char nameFormat[] = "%s (binary format, %zu bytes, load address %06" PRIo32 ")";
     char nameBuf[sizeof(nameFormat) + MAX_FILE_NAME_LEN + 10 + 6];
     snprintf(nameBuf, sizeof(nameBuf), nameFormat, fileName, fileLen, loadAddr);
 
@@ -402,7 +402,6 @@ void SettingsMenu(Port& uiPort)
     };
 
     while (true) {
-        SerialConfig serialConfig;
         bool reconfigPorts = false;
     
         ToString(Settings::SCLConfig, sSCLConfigValue, sizeof(sSCLConfigValue));
@@ -506,7 +505,7 @@ bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW)
     return true;
 }
 
-bool GetInteger(Port& uiPort, uint32_t& val, int base, uint32_t defaultVal)
+bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal)
 {
     int charCount = 0;
     char ch;
@@ -659,7 +658,7 @@ bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressB
 
 const char * ToString(const SerialConfig& serialConfig, char * buf, size_t bufSize)
 {
-    snprintf(buf, bufSize, "%u-%u-%c-%u",
+    snprintf(buf, bufSize, "%" PRIu32 "-%" PRIu8 "-%c-%" PRIu8,
         serialConfig.BitRate,
         serialConfig.DataBits,
         serialConfig.Parity == SerialConfig::PARITY_NONE ? 'N' : (serialConfig.Parity == SerialConfig::PARITY_EVEN ? 'E' : 'O'),
@@ -680,7 +679,7 @@ const char * ToString(Settings::ShowPTRProgress_t val, char * buf, size_t bufSiz
 {
     const char * valStr;
 
-    switch (Settings::ShowPTRProgress) {
+    switch (val) {
     case Settings::ShowPTRProgress_Enabled:  valStr = "on";       break;
     case Settings::ShowPTRProgress_USBOnly:  valStr = "USB only"; break;
     default:

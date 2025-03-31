@@ -25,7 +25,7 @@
 
 void Menu::Show(Port& uiPort) const
 {
-    int colWidth = GetColumnWidth();
+    size_t colWidth = GetColumnWidth();
 
     // Display the title
     uiPort.Printf("\r\n" MENU_PREFIX "%s\r\n", Title);
@@ -57,7 +57,7 @@ void Menu::Show(Port& uiPort) const
 
         // Print each row...
         for (size_t row = 0; row < numRowsInGroup; row++) {
-            int padding = 0;
+            size_t padding = 0;
 
             // Print each item in the current row...
             for (size_t i = row; i < numItemsInGroup; i += numRowsInGroup) {
@@ -69,7 +69,7 @@ void Menu::Show(Port& uiPort) const
 
                 // Print the selector for the current menu item, translating control
                 // characters to printable text (e.g. "CTRL+x")
-                int itemWidth = rowItem->PrintSelector(uiPort);
+                size_t itemWidth = rowItem->PrintSelector(uiPort);
 
                 // Print the menu item text
                 uiPort.Write(rowItem->Text);
@@ -78,8 +78,8 @@ void Menu::Show(Port& uiPort) const
                 // If the menu item has a value, print it right-justified in the 
                 // column.
                 if (rowItem->Value != NULL) {
-                    int valueWidth = strlen(rowItem->Value);
-                    int valuePadding = colWidth - (itemWidth + valueWidth);
+                    size_t valueWidth = strlen(rowItem->Value);
+                    size_t valuePadding = colWidth - (itemWidth + valueWidth);
                     while (valuePadding-- > 0) { uiPort.Write('.'); }
                     uiPort.Write(rowItem->Value);
                     itemWidth = colWidth;
@@ -160,31 +160,33 @@ bool Menu::IsValidSelection(char sel) const
     return false;
 }
 
-int Menu::GetColumnWidth(void) const
+size_t Menu::GetColumnWidth(void) const
 {
-    int colWidth = ColWidth;
-
     // Compute minimal column width if not specified
-    if (colWidth < 0) {
+    if (ColWidth < 0) {
+        size_t minColWidth = 0;
+
         for (auto item = Items; !item->IsEnd(); item++) {
-            int itemWidth = item->GetSelectorWidth();   // "x) "
-            itemWidth += strlen(item->Text);            // <item-text>
+            size_t itemWidth = item->GetSelectorWidth();  // "x) "
+            itemWidth += strlen(item->Text);                // <item-text>
             if (item->Value != NULL) {
-                itemWidth += 1;                         // " "
-                itemWidth += strlen(item->Value);       // <item-value>
+                itemWidth += 1;                             // " "
+                itemWidth += strlen(item->Value);           // <item-value>
             }
-            if (colWidth < itemWidth) {
-                colWidth = itemWidth;
+            if (minColWidth < itemWidth) {
+                minColWidth = itemWidth;
             }
         }
+        return minColWidth;
     }
-
-    return colWidth;
+    else {
+        return (size_t)ColWidth;
+    }
 }
 
-int MenuItem::PrintSelector(Port& uiPort) const
+size_t MenuItem::PrintSelector(Port& uiPort) const
 {
-    int width;
+    size_t width;
 
     // Print Selector text
     if (Selector == '\r') {
@@ -212,7 +214,7 @@ int MenuItem::PrintSelector(Port& uiPort) const
     return width;
 }
 
-int MenuItem::GetSelectorWidth(void) const
+size_t MenuItem::GetSelectorWidth(void) const
 {
     // Print Selector text
     if (Selector == '\r') {

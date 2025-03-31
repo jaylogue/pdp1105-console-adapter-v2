@@ -39,6 +39,18 @@ add_executable(pdp1105-console-adapter
     external/async_xmodem/xmodem_server.c
 )
 
+# Additional compilation options
+target_compile_options(pdp1105-console-adapter
+    PRIVATE
+        -Wall
+        -Wextra
+        -Wimplicit-fallthrough
+        -Wsign-conversion
+        -Wno-missing-field-initializers
+        -fno-strict-aliasing
+        -fno-strict-overflow
+        -fno-delete-null-pointer-checks)
+
 # Additional include directories for building executable
 target_include_directories(pdp1105-console-adapter
     PRIVATE

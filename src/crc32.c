@@ -25,7 +25,7 @@
 
 uint32_t crc32(const uint8_t * buf, size_t len)
 {
-    int i, j;
+    uint32_t i, j;
     uint32_t byte, crc, mask;
  
     i = 0;
@@ -33,7 +33,7 @@ uint32_t crc32(const uint8_t * buf, size_t len)
     while (i < len) {
        byte = buf[i];            // Get next byte.
        crc = crc ^ byte;
-       for (j = 7; j >= 0; j--) {    // Do eight times.
+       for (j = 8; j > 0; j--) {    // Do eight times.
           mask = -(crc & 1);
           crc = (crc >> 1) ^ (0xEDB88320 & mask);
        }

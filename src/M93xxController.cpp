@@ -170,6 +170,9 @@ bool M93xxController::ProcessOutput(char ch)
             mState = kWaitingForPrompt;
         }
         break;
+
+    case kStart:
+        break;
     }
 
     return true;
@@ -229,7 +232,7 @@ bool M93xxController::ProcessTimeouts(void)
 
 void M93xxController::SetAddress(uint16_t addr)
 {
-    if (mState = kReadyForCommand) {
+    if (mState == kReadyForCommand) {
         char loadCmd[10];
         snprintf(loadCmd, sizeof(loadCmd), "L %06" PRIo16 "\r", addr);
         gSCLPort.Write(loadCmd);
@@ -239,7 +242,7 @@ void M93xxController::SetAddress(uint16_t addr)
 
 void M93xxController::Deposit(uint16_t val)
 {
-    if (mState = kReadyForCommand) {
+    if (mState == kReadyForCommand) {
         char depositCmd[10];
         snprintf(depositCmd, sizeof(depositCmd), "D %06" PRIo16 "\r", val);
         gSCLPort.Write(depositCmd);
@@ -249,7 +252,7 @@ void M93xxController::Deposit(uint16_t val)
 
 void M93xxController::Examine(void)
 {
-    if (mState = kReadyForCommand) {
+    if (mState == kReadyForCommand) {
         gSCLPort.Write("E ");
         mState = kWaitingForResponse;
     }
@@ -257,7 +260,7 @@ void M93xxController::Examine(void)
 
 void M93xxController::Start(void)
 {
-    if (mState = kReadyForCommand) {
+    if (mState == kReadyForCommand) {
         gSCLPort.Write("S\r");
         mState = kWaitingForResponse;
     }

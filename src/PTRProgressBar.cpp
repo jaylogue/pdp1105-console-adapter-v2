@@ -60,11 +60,11 @@ void PTRProgressBar::Update(Port * uiPort)
         pos = MIN(pos, PROGRESS_BAR_WIDTH);
 
         // Add or remove progress bar characters as needed.
-        while (sState < pos) {
+        while ((size_t)sState < pos) {
             sPort->Write('=');
             sState++;
         }
-        while (sState > pos) {
+        while ((size_t)sState > pos) {
             sPort->Write(RUBOUT);
             sState--;
         }
@@ -81,7 +81,7 @@ void PTRProgressBar::Clear(void)
 
         // Overwrite the progress bar with spaces and reposition back to the
         // original output point.
-        for (auto i = sState + strlen(PROGRESS_BAR_PREFIX); i; i--) {
+        for (auto i = (size_t)sState + strlen(PROGRESS_BAR_PREFIX); i; i--) {
             sPort->Write(BS);
         }
         for (auto i = PROGRESS_BAR_TOTAL_WIDTH; i; i--) {

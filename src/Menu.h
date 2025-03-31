@@ -38,17 +38,17 @@ struct MenuItem
 private:
     friend class Menu;
 
-    int PrintSelector(Port& uiPort) const;
-    int GetSelectorWidth(void) const;
+    size_t PrintSelector(Port& uiPort) const;
+    size_t GetSelectorWidth(void) const;
 };
 
 struct Menu
 {
     const char * Title;
     const MenuItem * Items;
-    int NumCols;
+    size_t NumCols;
     int ColWidth;
-    int ColMargin;
+    size_t ColMargin;
 
     void Show(Port& uiPort) const;
     char GetSelection(Port& uiPort, const char * prompt = INPUT_PROMPT,
@@ -56,7 +56,7 @@ struct Menu
     bool IsValidSelection(char sel) const;
 
 private:
-    int GetColumnWidth(void) const;
+    size_t GetColumnWidth(void) const;
 };
 
 #endif // MENU_H

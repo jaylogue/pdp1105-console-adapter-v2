@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <inttypes.h>
+
 #include "ConsoleAdapter.h"
 #include "Settings.h"
 #include "Menu.h"
@@ -145,7 +147,7 @@ void Settings::Save(void)
     const uint8_t * page = GetFlashPage(newRec);
 
     // Compute the offset into page at which the record will be written
-    size_t recOffsetInPage = ((const uint8_t *)newRec) - page;
+    size_t recOffsetInPage = (size_t)(((const uint8_t *)newRec) - page);
 
     // Compute the number of flash pages to be writen
     size_t pageCount = 
@@ -233,10 +235,7 @@ bool Settings::IsSupportedRecord(uint16_t recVer)
 
 void Settings::PrintStats(Port& uiPort)
 {
-    size_t storageSize = &__SettingsStorageEnd - &__SettingsStorageStart;
-    int32_t remainingSpaceInPage = (sLatestRec != NULL)
-        ? (GetFlashSector(sLatestRec) + FLASH_SECTOR_SIZE) - ((const uint8_t *)sLatestRec)
-        : 0;
+    size_t storageSize = (size_t)(&__SettingsStorageEnd - &__SettingsStorageStart);
 
     uiPort.Printf(
         MENU_PREFIX "SETTINGS STATS:\r\n"
@@ -253,17 +252,17 @@ void Settings::PrintStats(Port& uiPort)
     );
     if (sLatestRec != NULL) {
         size_t curSector = 
-            (GetFlashSector(sLatestRec) - &__SettingsStorageStart) / FLASH_SECTOR_SIZE;
+            (size_t)(GetFlashSector(sLatestRec) - &__SettingsStorageStart) / FLASH_SECTOR_SIZE;
         size_t offset =
-            ((const uint8_t *)sLatestRec) - GetFlashSector(sLatestRec);
+            (size_t)(((const uint8_t *)sLatestRec) - GetFlashSector(sLatestRec));
         size_t remainingSpace =
-            (GetFlashSector(sLatestRec) + FLASH_SECTOR_SIZE) - 
-                ((const uint8_t *)sLatestRec + sLatestRec->GetSize());
+            (size_t)((GetFlashSector(sLatestRec) + FLASH_SECTOR_SIZE) - 
+                ((const uint8_t *)sLatestRec + sLatestRec->GetSize()));
         uiPort.Printf(
-            "  Latest flash sector: %u\r\n"
-            "  Latest record offset in sector: %u\r\n"
-            "  Remaining space in latest sector: %u\r\n"
-            "  Latest Data Revision: %u\r\n",
+            "  Latest flash sector: %zu\r\n"
+            "  Latest record offset in sector: %zu\r\n"
+            "  Remaining space in latest sector: %zu\r\n"
+            "  Latest Data Revision: %" PRIu32 "\r\n",
             curSector,
             offset,
             remainingSpace,

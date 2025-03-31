@@ -69,7 +69,7 @@ inline void HostPort::Write(char ch)
 
 inline void HostPort::Write(const char * str)
 {
-    stdio_put_string(str, strlen(str), false, false);
+    stdio_put_string(str, (int)strlen(str), false, false);
     ActivityLED::SysActive();
 }
 

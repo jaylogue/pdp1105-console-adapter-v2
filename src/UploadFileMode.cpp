@@ -34,7 +34,7 @@ bool UploadFileMode(Port& uiPort)
     char ch;
     bool fileTooBig = false;
 
-    const auto txChar = [](struct xmodem_server *xdm, uint8_t byte, void *cbData) {
+    const auto txChar = [](struct xmodem_server * /* xdm */, uint8_t byte, void *cbData) {
         Port& xmodemPort = *(Port *)cbData;
         xmodemPort.Write((char)byte);
     };
@@ -86,7 +86,7 @@ bool UploadFileMode(Port& uiPort)
         rxLen = xmodem_server_process(&xdm, &gUploadedFile[gUploadedFileLen], &blockNum,
             (int64_t)(time_us_64() / 1000));
         if (rxLen > 0) {
-            gUploadedFileLen += rxLen;
+            gUploadedFileLen += (size_t)rxLen;
         }
     }
 

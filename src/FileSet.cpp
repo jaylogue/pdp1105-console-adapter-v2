@@ -80,11 +80,6 @@ const char * FileSet::GetFileName(size_t index)
 
 bool FileHeader::IsValid(void) const
 {
-    // Shouldn't happen, but check anyway
-    if (this == NULL) {
-        return false;
-    }
-
     // Verify the file falls entirely within the expected flash range.
     const uint8_t * fileStart = (const uint8_t *)this;
     if (fileStart < &__FileStorageStart || fileStart >= &__FileStorageEnd) {

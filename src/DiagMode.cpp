@@ -183,10 +183,10 @@ extern "C" uint8_t __SettingsStorageEnd;
 void DiagMode_SettingsTest(Port& uiPort)
 {
     static const MenuItem sMenuItems[] = {
-        { 's', "Save settings"                  },
-        { 't', "Save settings x10"      },
+        { 's', "Save settings"              },
+        { 't', "Save settings x10"          },
         MenuItem::SEPARATOR(),
-        { '\e', "Return to terminal mode"       },
+        { '\e', "Return to terminal mode"   },
         MenuItem::HIDDEN(CTRL_C),
         MenuItem::END()
     };

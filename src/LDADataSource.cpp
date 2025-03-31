@@ -88,7 +88,7 @@ uint16_t LDADataSource::GetStartAddress(void)
 
 LDAReader::LDAReader(const uint8_t* buf, size_t len)
 : mInputBuf(buf), mReadPtr(buf), mRemainingLen(len), 
-  mBlockLen(0), mDataPtr(NULL), mDataLen(0),
+  mDataPtr(NULL), mBlockLen(0), mDataLen(0),
   mLoadAddr(NO_ADDR), mStartAddr(NO_ADDR), mReadError(false)
 {
 }

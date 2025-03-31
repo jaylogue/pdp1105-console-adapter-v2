@@ -90,7 +90,7 @@ const SerialConfig& HostPort::GetConfig(void)
 // Called by the USB stack to signal that the USB host has changed the serial
 // configuraiton.
 extern "C"
-void tud_cdc_line_coding_cb(uint8_t itf, cdc_line_coding_t const* p_line_coding)
+void tud_cdc_line_coding_cb(uint8_t /* itf */, cdc_line_coding_t const* /* p_line_coding */)
 {
     sSerialConfigChanged = true;
 }
