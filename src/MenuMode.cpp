@@ -161,11 +161,12 @@ void AdapterStatus(Port& uiPort)
 
     uiPort.Write("\r\n" MENU_PREFIX "ADAPTER STATUS:\r\n");
 
-    uiPort.Printf("  SCL Port: %s (%s)\r\n",
+    uiPort.Printf("  SCL Port: %s (%s), %s\r\n",
         ToString(gSCLPort.GetConfig(), buf, sizeof(buf)),
         (Settings::SCLConfigFollowsUSB && gSCLPort.GetConfig() != Settings::SCLConfig) 
             ? "set via USB"
-            : "default"
+            : "default",
+        gSCLPort.CheckConnected() ? "connected" : "disconnected"
     );
 
     uiPort.Printf("  Aux Port: %s (%s)\r\n",
