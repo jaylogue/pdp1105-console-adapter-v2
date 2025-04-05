@@ -186,15 +186,25 @@ void AdapterStatus(Port& uiPort)
     else {
         uiPort.Write("  Paper Tape Reader: No tape mounted\r\n");
     }
-
-    uiPort.Write("  Software Build Time: " __DATE__ " " __TIME__ "\r\n"
-                 "  Commit Id: " GIT_COMMIT_ID "\r\n");
 }
 
 void AdapterVersion(Port& uiPort)
 {
+#define STR(x) _STR(x)
+#define _STR(x) #x
+
+#if !defined(GIT_COMMIT_ID)
+#define GIT_COMMIT_ID "unknown"
+#endif
+
+#if !defined(GIT_BRANCH)
+#define GIT_BRANCH "unknown"
+#endif
+
     uiPort.Write(
-        "\r\n" MENU_PREFIX "PDP-11/05 Console Adapter V2\r\n"
+        "\r\n"
+        MENU_PREFIX "PDP-11/05 Console Adapter V2\r\n"
+        "  Hardware Revision: " STR(HW_REV) "\r\n"
         "  Build Time: " __DATE__ " " __TIME__ "\r\n"
         "  Commit Id: " GIT_COMMIT_ID " (" GIT_BRANCH ")\r\n\r\n");
 }

@@ -17,6 +17,8 @@
 #ifndef ACTIVITY_LED_H
 #define ACTIVITY_LED_H
 
+#include "Config.h"
+
 class ActivityLED final
 {
 public:
@@ -35,19 +37,31 @@ private:
         void UpdateState(void);
     };
 
+#if defined(TX_ACTIVITY_LED_PIN)
     static LEDState sTxLED;
+#endif
+#if defined(RX_ACTIVITY_LED_PIN)
     static LEDState sRxLED;
+#endif
     static LEDState sSysLED;
 };
 
 inline void ActivityLED::TxActive(void)
 {
+#if defined(TX_ACTIVITY_LED_PIN)
     sTxLED.IsActive = true;
+#else
+    SysActive();
+#endif
 }
 
 inline void ActivityLED::RxActive(void)
 {
+#if defined(RX_ACTIVITY_LED_PIN)
     sRxLED.IsActive = true;
+#else
+    SysActive();
+#endif
 }
 
 inline void ActivityLED::SysActive(void)

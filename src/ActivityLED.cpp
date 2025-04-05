@@ -16,21 +16,29 @@
 
 #include "ConsoleAdapter.h"
 
+#if defined(TX_ACTIVITY_LED_PIN)
 ActivityLED::LEDState ActivityLED::sTxLED;
+#endif
+#if defined(RX_ACTIVITY_LED_PIN)
 ActivityLED::LEDState ActivityLED::sRxLED;
+#endif
 ActivityLED::LEDState ActivityLED::sSysLED;
 
 void ActivityLED::Init(void)
 {
-    // Setup Tx LED pin
+    // Setup Tx LED pin, if supported
+#if defined(TX_ACTIVITY_LED_PIN)
     gpio_init(TX_ACTIVITY_LED_PIN);
     gpio_set_dir(TX_ACTIVITY_LED_PIN, GPIO_OUT);
     sTxLED.GPIO = TX_ACTIVITY_LED_PIN;
+#endif
 
-    // Setup Rx LED pin
+    // Setup Rx LED pin, if supported
+#if defined(RX_ACTIVITY_LED_PIN)
     gpio_init(RX_ACTIVITY_LED_PIN);
     gpio_set_dir(RX_ACTIVITY_LED_PIN, GPIO_OUT);
     sRxLED.GPIO = RX_ACTIVITY_LED_PIN;
+#endif
 
     // Setup system activity LED pin
     //   NOTE: System activity LED is inverted (normally ON, active OFF)
@@ -42,22 +50,27 @@ void ActivityLED::Init(void)
     sSysLED.GPIO = SYS_ACTIVITY_LED_PIN;
 
     // Setup Pico onboard LED pin to track system activity LED
-#ifdef PICO_DEFAULT_LED_PIN
+    // (unless the activity LED is the onboard LED).
+#if SYS_ACTIVITY_LED_PIN != PICO_DEFAULT_LED_PIN
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 #if !PICO_DEFAULT_LED_PIN_INVERTED
     gpio_set_outover(PICO_DEFAULT_LED_PIN, GPIO_OVERRIDE_INVERT);
     gpio_set_inover(PICO_DEFAULT_LED_PIN, GPIO_OVERRIDE_INVERT);
 #endif
-#endif // PICO_DEFAULT_LED_PIN
+#endif // SYS_ACTIVITY_LED_PIN != PICO_DEFAULT_LED_PIN
 
     UpdateState();
 }
 
 void ActivityLED::UpdateState(void)
 {
+#if defined(TX_ACTIVITY_LED_PIN)
     sTxLED.UpdateState();
+#endif
+#if defined(RX_ACTIVITY_LED_PIN)
     sRxLED.UpdateState();
+#endif
     sSysLED.UpdateState();
 }
 
@@ -76,7 +89,7 @@ void ActivityLED::LEDState::UpdateState(void)
             LastUpdateTime = now;
 
             // Update Pico onboard LED to track system activity LED
-#ifdef PICO_DEFAULT_LED_PIN
+#if SYS_ACTIVITY_LED_PIN != PICO_DEFAULT_LED_PIN
             if (GPIO == SYS_ACTIVITY_LED_PIN) {
                 gpio_put(PICO_DEFAULT_LED_PIN, IsActive);
             }

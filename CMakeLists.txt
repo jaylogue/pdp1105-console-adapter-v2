@@ -62,9 +62,18 @@ target_link_libraries(pdp1105-console-adapter
     hardware_pwm)
 
 # Use custom application-specific linker script
-pico_set_linker_script(pdp1105-console-adapter ${CMAKE_SOURCE_DIR}/src/pdp1105-console-adapter.ld)
+pico_set_linker_script(pdp1105-console-adapter
+    ${CMAKE_SOURCE_DIR}/src/pdp1105-console-adapter.ld)
 
-# Add C #defines containing git commit id and branch
+# Add #define for target hardware revision if passed
+# on the command line
+if(DEFINED HW_REV)
+    target_compile_definitions(pdp1105-console-adapter
+        PRIVATE
+            HW_REV=${HW_REV})
+endif()
+
+# Add #defines containing git commit id and branch
 execute_process(
     COMMAND git rev-parse --short HEAD
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
