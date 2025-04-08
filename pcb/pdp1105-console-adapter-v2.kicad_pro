@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.762,
-          "height": 1.524,
-          "width": 1.524
+          "drill": 0.0,
+          "height": 0.6,
+          "width": 1.95
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -58,7 +58,14 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        "silk_edge_clearance|105165000|108180600|b92a3c73-931e-4c96-9823-e3bf348a522e|18333dbf-1cb2-4876-b91b-b5d2c8c2351e",
+        "silk_edge_clearance|105165000|77210600|b92a3c73-931e-4c96-9823-e3bf348a522e|3f103274-cb6d-4a4c-a8f3-2769c6a53a45",
+        "silk_overlap|116406325|98235600|9dd7b776-1b3f-423e-844b-29122063aeaa|a822314a-5361-40bb-9c18-573667d5ce19",
+        "silk_overlap|116839338|97985600|9dd7b776-1b3f-423e-844b-29122063aeaa|dece0497-e5e1-4c4b-8370-43f37768cb93",
+        "silk_overlap|116839338|98485600|9dd7b776-1b3f-423e-844b-29122063aeaa|b133d1e2-0ed6-45f5-b515-a2cd97b84d17",
+        "silk_overlap|176963500|99395847|c9164253-c5b2-428f-9af3-dd0d0ea5e5b5|00ae0a93-cb27-4a46-8d36-361a6822772d"
+      ],
       "meta": {
         "version": 2
       },
@@ -123,9 +130,9 @@
         "min_hole_to_hole": 0.25,
         "min_microvia_diameter": 0.2,
         "min_microvia_drill": 0.1,
-        "min_resolved_spokes": 2,
+        "min_resolved_spokes": 1,
         "min_silk_clearance": 0.0,
-        "min_text_height": 0.8,
+        "min_text_height": 0.6,
         "min_text_thickness": 0.08,
         "min_through_hole_diameter": 0.3,
         "min_track_width": 0.0,
