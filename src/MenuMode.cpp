@@ -190,9 +190,6 @@ void AdapterStatus(Port& uiPort)
 
 void AdapterVersion(Port& uiPort)
 {
-#define STR(x) _STR(x)
-#define _STR(x) #x
-
 #if !defined(GIT_COMMIT_ID)
 #define GIT_COMMIT_ID "unknown"
 #endif
@@ -201,12 +198,13 @@ void AdapterVersion(Port& uiPort)
 #define GIT_BRANCH "unknown"
 #endif
 
-    uiPort.Write(
+    uiPort.Printf(
         "\r\n"
         MENU_PREFIX "PDP-11/05 Console Adapter V2\r\n"
-        "  Hardware Revision: " STR(HW_REV) "\r\n"
+        "  Hardware Revision: %.2g\r\n"
         "  Build Time: " __DATE__ " " __TIME__ "\r\n"
-        "  Commit Id: " GIT_COMMIT_ID " (" GIT_BRANCH ")\r\n\r\n");
+        "  Commit Id: " GIT_COMMIT_ID " (" GIT_BRANCH ")\r\n\r\n",
+        ((double)HW_REV) / 10);
 }
 
 void LoadFile(Port& uiPort)

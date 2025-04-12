@@ -21,18 +21,20 @@
 // CONFIGURATION
 // ================================================================================
 
-// Target Hardware Revision. This should correspond to a major revision of the
-// Console Adapter schematic. (Major revisions require software changes while minor
-// revisions are software compatible).
+// Target Hardware Revision. This should correspond to the revision of the Console
+// Adapter schematic multiplied by 10.
 #ifndef HW_REV
-#define HW_REV 4
+#define HW_REV 40
+#endif
+#if HW_REV != 30 && HW_REV != 40 && HW_REV != 41
+#error Unsupported Hardware Revision
 #endif
 
 // UART for speaking to PDP-11/05 SCL/console.  The RX pin for this UART should be
 // connected to the PDP-11's "SERIAL OUT (TTL)" signal (D/04 on the SCL connector),
 // while the TX pin should be connected to the "SERIAL IN (TTL)" signal (RR/36).
 #define SCL_UART uart0
-#if HW_REV == 4
+#if HW_REV >= 40
 #define SCL_UART_TX_PIN 16
 #define SCL_UART_RX_PIN 1
 #else
@@ -59,7 +61,7 @@
 // This pin is used to clock the SCL UART inside the PDP-11, allowing the console adapter
 // to control the baud rate.  For this to work, the PDP-11's built-in baud rate generator
 // must be disabled by grounding the "CLK DISAB (TTL)" line (N/12 on the SCL connector).
-#if HW_REV == 4
+#if HW_REV >= 40
 #define SCL_CLOCK_PIN 22
 #else
 #define SCL_CLOCK_PIN 6
@@ -70,7 +72,7 @@
 // on the SCL connector.  When the console adapter is connected to the PDP-11, the line
 // is pulled low; when the console adapter is not connected, an internal pull-up resistor
 // pulls the line high.
-#if HW_REV == 4
+#if HW_REV >= 40
 #define SCL_DETECT_PIN 18
 #else
 #define SCL_DETECT_PIN 2
@@ -80,19 +82,23 @@
 #define READER_RUN_PIN 3
 
 // System Activity LED pin.
-#if HW_REV == 4
+#if HW_REV == 40
 #define SYS_ACTIVITY_LED_PIN 14
+#elif HW_REV >= 41
+#define SYS_ACTIVITY_LED_PIN 15
 #else
 #define SYS_ACTIVITY_LED_PIN PICO_DEFAULT_LED_PIN
 #endif
 
 // Tx Activity LED pin.
-#if HW_REV == 4
+#if HW_REV == 40
 #define TX_ACTIVITY_LED_PIN 15
+#elif HW_REV >= 41
+#define TX_ACTIVITY_LED_PIN 14
 #endif
 
 // Rx Activity LED pin.
-#if HW_REV == 4
+#if HW_REV >= 40
 #define RX_ACTIVITY_LED_PIN 17
 #endif
 
