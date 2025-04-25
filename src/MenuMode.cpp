@@ -198,13 +198,27 @@ void AdapterVersion(Port& uiPort)
 #define GIT_BRANCH "unknown"
 #endif
 
+    static const uint32_t kCompatibleHWRevs[] = COMPATIBLE_HW_REVS;
+    static constexpr size_t kNumCompatibleHWRevs = sizeof(kCompatibleHWRevs) / sizeof(kCompatibleHWRevs[0]);
+
     uiPort.Printf(
         "\r\n"
         TITLE_PREFIX "PDP-11/05 Console Adapter V2\r\n"
-        "  Target Hardware Revision: %.2g\r\n"
-        "  Build Time: " __DATE__ " " __TIME__ "\r\n"
-        "  Commit Id: " GIT_COMMIT_ID " (" GIT_BRANCH ")\r\n\r\n",
+        "  Target Hardware Revision: %.2g",
         ((double)HW_REV) / 10);
+
+    if (kNumCompatibleHWRevs != 0) {
+        uiPort.Write(" (compatible with");
+        for (size_t i = 0; i < kNumCompatibleHWRevs; i++) {
+            uiPort.Printf(" %.2g", ((double)kCompatibleHWRevs[i]) / 10);
+        }
+        uiPort.Write(")");
+    }
+    uiPort.Write("\r\n");
+
+    uiPort.Write(
+        "  Build Time: " __DATE__ " " __TIME__ "\r\n"
+        "  Commit Id: " GIT_COMMIT_ID " (branch " GIT_BRANCH ")\r\n\r\n");
 }
 
 void LoadFile(Port& uiPort)

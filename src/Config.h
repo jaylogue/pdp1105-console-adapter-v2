@@ -30,6 +30,17 @@
 #error Unsupported Hardware Revision
 #endif
 
+// List of compatible hardware revisions
+#ifndef COMPATIBLE_HW_REVS
+#if HW_REV == 42
+#define COMPATIBLE_HW_REVS { 41 }
+#elif HW_REV == 41
+#define COMPATIBLE_HW_REVS { 42 }
+#else
+#define COMPATIBLE_HW_REVS { }
+#endif
+#endif
+
 // UART for speaking to PDP-11/05 SCL/console.  The RX pin for this UART should be
 // connected to the PDP-11's "SERIAL OUT (TTL)" signal (D/04 on the SCL connector),
 // while the TX pin should be connected to the "SERIAL IN (TTL)" signal (RR/36).
