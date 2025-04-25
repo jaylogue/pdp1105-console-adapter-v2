@@ -24,9 +24,9 @@
 // Target Hardware Revision. This should correspond to the revision of the Console
 // Adapter schematic multiplied by 10.
 #ifndef HW_REV
-#define HW_REV 40
+#define HW_REV 42
 #endif
-#if HW_REV != 30 && HW_REV != 40 && HW_REV != 41
+#if HW_REV != 30 && HW_REV != 40 && HW_REV != 41 && HW_REV != 42
 #error Unsupported Hardware Revision
 #endif
 

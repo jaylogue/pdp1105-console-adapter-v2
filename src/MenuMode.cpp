@@ -201,7 +201,7 @@ void AdapterVersion(Port& uiPort)
     uiPort.Printf(
         "\r\n"
         TITLE_PREFIX "PDP-11/05 Console Adapter V2\r\n"
-        "  Hardware Revision: %.2g\r\n"
+        "  Target Hardware Revision: %.2g\r\n"
         "  Build Time: " __DATE__ " " __TIME__ "\r\n"
         "  Commit Id: " GIT_COMMIT_ID " (" GIT_BRANCH ")\r\n\r\n",
         ((double)HW_REV) / 10);
