@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "PDP-11/05 Console Adapter V2")
-		(date "2025-04-12")
-		(rev "4.1")
+		(date "2025-04-19")
+		(rev "4.2")
 		(comment 1 "Licensed under a Creative Commons Attribution 4.0 International License")
 		(comment 2 "Copyright © 2025 Jay Logue")
 		(comment 4 "https://github.com/jaylogue/pdp1105-console-adapter-v2")
@@ -8145,15 +8145,15 @@
 	(symbol
 		(lib_id "Jumper:SolderJumper_3_Bridged12")
 		(at 116.84 171.45 90)
+		(mirror x)
 		(unit 1)
 		(exclude_from_sim yes)
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "b93ed031-f4fa-495f-9fdb-c406f27ae0d6")
 		(property "Reference" "JP1"
-			(at 115.1891 170.2378 90)
+			(at 115.316 170.18 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8162,7 +8162,7 @@
 			)
 		)
 		(property "Value" "SolderJumper_3_Bridged12"
-			(at 115.1891 172.6621 90)
+			(at 115.1891 170.2379 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8376,15 +8376,15 @@
 	(symbol
 		(lib_id "Jumper:SolderJumper_3_Bridged12")
 		(at 116.84 157.48 90)
+		(mirror x)
 		(unit 1)
 		(exclude_from_sim yes)
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "bffe6bfa-e6ef-4d8b-a971-0d688fafb4ce")
 		(property "Reference" "JP2"
-			(at 115.1891 156.2678 90)
+			(at 115.316 156.21 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8393,7 +8393,7 @@
 			)
 		)
 		(property "Value" "SolderJumper_3_Bridged12"
-			(at 115.1891 158.6921 90)
+			(at 115.1891 156.2679 90)
 			(effects
 				(font
 					(size 1.27 1.27)
