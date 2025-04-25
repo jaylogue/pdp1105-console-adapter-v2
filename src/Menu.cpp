@@ -28,7 +28,7 @@ void Menu::Show(Port& uiPort) const
     size_t colWidth = GetColumnWidth();
 
     // Display the title
-    uiPort.Printf("\r\n" MENU_PREFIX "%s\r\n", Title);
+    uiPort.Printf("\r\n" TITLE_PREFIX "%s\r\n", Title);
 
     // Render all the visible items in the menu
     for (auto item = Items; !item->IsEnd(); ) {

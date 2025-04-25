@@ -17,9 +17,6 @@
 #ifndef MENU_H
 #define MENU_H
 
-#define INPUT_PROMPT    ">>> "
-#define MENU_PREFIX     "*** "
-
 struct MenuItem
 {
     char Selector;

@@ -151,7 +151,7 @@ void MountPaperTape(Port& uiPort)
 
     PaperTapeReader::Mount(fileName, fileData, fileLen);
 
-    uiPort.Printf(MENU_PREFIX "MOUNTED PAPER TAPE: %s (%u bytes)\r\n", 
+    uiPort.Printf(TITLE_PREFIX "MOUNTED PAPER TAPE: %s (%u bytes)\r\n", 
         PaperTapeReader::TapeName(), PaperTapeReader::TapeLength());
 }
 
@@ -159,7 +159,7 @@ void AdapterStatus(Port& uiPort)
 {
     char buf[30];
 
-    uiPort.Write("\r\n" MENU_PREFIX "ADAPTER STATUS:\r\n");
+    uiPort.Write("\r\n" TITLE_PREFIX "ADAPTER STATUS:\r\n");
 
     uiPort.Printf("  SCL Port: %s (%s), %s\r\n",
         ToString(gSCLPort.GetConfig(), buf, sizeof(buf)),
@@ -200,7 +200,7 @@ void AdapterVersion(Port& uiPort)
 
     uiPort.Printf(
         "\r\n"
-        MENU_PREFIX "PDP-11/05 Console Adapter V2\r\n"
+        TITLE_PREFIX "PDP-11/05 Console Adapter V2\r\n"
         "  Hardware Revision: %.2g\r\n"
         "  Build Time: " __DATE__ " " __TIME__ "\r\n"
         "  Commit Id: " GIT_COMMIT_ID " (" GIT_BRANCH ")\r\n\r\n",
@@ -296,7 +296,7 @@ void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileDat
     static uint32_t sDefaultLoadAddr = 0;
 
     do {
-        uiPort.Printf("*** ENTER LOAD ADDRESS [%" PRId32 "]: ", sDefaultLoadAddr);
+        uiPort.Printf(INPUT_PROMPT "ENTER LOAD ADDRESS [%" PRId32 "]: ", sDefaultLoadAddr);
         if (!GetInteger(uiPort, loadAddr, 8, sDefaultLoadAddr)) {
             return;
         }

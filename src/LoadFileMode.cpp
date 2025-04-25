@@ -22,7 +22,7 @@ void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
     M93xxController m93xxCtr;
     bool startAddrLoaded = false;
 
-    uiPort.Printf("*** LOADING FILE: %s\r\n", fileName);
+    uiPort.Printf(TITLE_PREFIX "LOADING FILE: %s\r\n", fileName);
 
     while (true) {
         char ch;
@@ -37,13 +37,13 @@ void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
         // Process any timeouts while talking to the M9301/M9312 console;
         // If the console is unresponsive, abort and return to terminal mode.
         if (m93xxCtr.ProcessTimeouts()) {
-            uiPort.Write("*** TIMEOUT (no response from console)\r\n");
+            uiPort.Write(TITLE_PREFIX "TIMEOUT (no response from console)\r\n");
             break;
         }
 
         // Check for an interrupt character from the UI port.
         if (uiPort.TryRead(ch) && ch == CTRL_C) {
-            uiPort.Write("*** INTERRUPTED\r\n");
+            uiPort.Write(TITLE_PREFIX "INTERRUPTED\r\n");
             break;
         }
 
@@ -52,7 +52,7 @@ void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
 
             // Pass the character to the M93xxController for processing.
             if (!m93xxCtr.ProcessOutput(ch)) {
-                uiPort.Write("*** ERROR (unexpected response from console)\r\n");
+                uiPort.Write(TITLE_PREFIX "ERROR (unexpected response from console)\r\n");
                 break;
             }
 
@@ -66,10 +66,10 @@ void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
             // appears ahead of the M9301/M9312 prompt.
             if (m93xxCtr.IsReadyForCommand() && dataSrc.AtEnd()) {
                 if (dataSrc.GetStartAddress() != NO_ADDR && !startAddrLoaded) {
-                    uiPort.Write("*** LOADING START ADDRESS\r\n");
+                    uiPort.Write(TITLE_PREFIX "LOADING START ADDRESS\r\n");
                 }
                 else {
-                    uiPort.Write("*** LOAD COMPLETE\r\n");
+                    uiPort.Write(TITLE_PREFIX "LOAD COMPLETE\r\n");
                 }
             }
 

@@ -63,7 +63,7 @@ void TerminalMode(void)
             lastUIPort = uiPort;
         }
 
-        // Forward characters received from the SCL port to both the Host and Aux terminals
+        // Forward characters received from the SCL port to both the Host and Aux ports
         if (gSCLPort.TryRead(ch)) {
             PTRProgressBar::Clear();
             WriteHostAuxPorts(ch);

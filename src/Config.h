@@ -126,4 +126,10 @@
 // Width of the paper tape reader progress bar
 #define PROGRESS_BAR_WIDTH 20
 
+// Prefix identifying a request for user input
+#define INPUT_PROMPT ">>> "
+
+// Prefix identifying menu titles or other notable UI output
+#define TITLE_PREFIX "*** "
+
 #endif // CONFIG_H

@@ -238,7 +238,7 @@ void Settings::PrintStats(Port& uiPort)
     size_t storageSize = (size_t)(&__SettingsStorageEnd - &__SettingsStorageStart);
 
     uiPort.Printf(
-        MENU_PREFIX "SETTINGS STATS:\r\n"
+        TITLE_PREFIX "SETTINGS STATS:\r\n"
         "  Storage Area Start: 0x%08x\r\n"
         "  Storage Area End: 0x%08x\r\n"
         "  Storage Area Size: %u (%u sectors)\r\n"

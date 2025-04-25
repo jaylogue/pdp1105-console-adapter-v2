@@ -47,7 +47,7 @@ bool UploadFileMode(Port& uiPort)
 
     xmodem_server_init(&xdm, txChar, &uiPort);
 
-    uiPort.Write("*** AWAITING FILE UPLOAD\r\n");
+    uiPort.Write(TITLE_PREFIX "AWAITING FILE UPLOAD\r\n");
 
     while (!xmodem_server_is_done(&xdm)) {
 
@@ -62,7 +62,7 @@ bool UploadFileMode(Port& uiPort)
             xmodem_server_state state = xmodem_server_get_state(&xdm);
             if (state == XMODEM_STATE_START) {
                 if (ch == CTRL_C) {
-                    uiPort.Write(" *** FILE UPLOAD ABORTED\r\n");
+                    uiPort.Write(" " TITLE_PREFIX "FILE UPLOAD ABORTED\r\n");
                     return false;
                 }
             }
@@ -101,13 +101,13 @@ bool UploadFileMode(Port& uiPort)
     }
 
     if (xmodem_server_get_state(&xdm) != XMODEM_STATE_SUCCESSFUL) {
-        uiPort.Printf("*** FILE UPLOAD FAILED: %s\r\n",
+        uiPort.Printf(TITLE_PREFIX "FILE UPLOAD FAILED: %s\r\n",
                       (fileTooBig) ? "File too big" : "Communication error");
         gUploadedFileLen = 0;
         return false;
     }
 
-    uiPort.Write("*** FILE UPLOAD COMPLETE\r\n");
+    uiPort.Write(TITLE_PREFIX "FILE UPLOAD COMPLETE\r\n");
     return true;
 }
 

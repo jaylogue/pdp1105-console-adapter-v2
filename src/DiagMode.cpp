@@ -27,7 +27,7 @@ void DiagMode_BasicIOTest(Port& uiPort)
     constexpr uint64_t kMaxSendIntervalUS = 500000;
 
     uiPort.Write(
-        "*** BASIC I/O TEST\r\n"
+        TITLE_PREFIX "BASIC I/O TEST\r\n"
         "\r\n"
         "Repeatedly send characters and verify that each character is echoed.\r\n"
         "\r\n"
@@ -57,7 +57,7 @@ void DiagMode_BasicIOTest(Port& uiPort)
         // Listen for control keys
         if (TryReadHostAuxPorts(ch)) {
             if (ch == CTRL_C) {
-                uiPort.Write("\r\n*** EXIT\r\n");
+                uiPort.Write("\r\n" TITLE_PREFIX "EXIT\r\n");
                 break;
             }
             if (ch == ' ') {
@@ -104,7 +104,7 @@ void DiagMode_ReaderRunTest(Port& uiPort)
     bool paused = false;
 
     uiPort.Write(
-        "*** READER RUN INTERFACE TEST\r\n"
+        TITLE_PREFIX "READER RUN INTERFACE TEST\r\n"
         "\r\n"
         "Send characters in response to RR signals, count RR signals seen and compare\r\n"
         "to counts received from the PDP-11.\r\n"
@@ -137,7 +137,7 @@ void DiagMode_ReaderRunTest(Port& uiPort)
 
         if (TryReadHostAuxPorts(ch)) {
             if (ch == CTRL_C) {
-                uiPort.Write("\r\n*** EXIT\r\n");
+                uiPort.Write("\r\n" TITLE_PREFIX "EXIT\r\n");
                 break;
             }
             if (ch == ' ') {
