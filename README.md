@@ -1,6 +1,6 @@
 # PDP-11/05 Console Adapter
 
-<img src="images/pdp1105-console-adapter-v2.png" width="1024"/>
+<img src="images/pdp1105-console-adapter-v2-2.jpg" width="1024"/>
 
 The *PDP-11/05 Console Adapter* is a hardware device which acts as a USB and RS-232 serial interface to the console of a [PDP-11/05](http://gunkies.org/wiki/PDP-11/05) minicomputer. The Console Adapter provides a number of useful features for working with the PDP-11/05:
 
