@@ -40,8 +40,8 @@ int main()
     gAuxPort.SetConfig(Settings::AuxConfig);
 #endif
 
-    // Initialize access to built-in files.
-    FileSet::Init();
+    // Initialize access to built-in file library.
+    FileLib::Init();
 
     // Initialize the activity LEDs
     ActivityLED::Init();

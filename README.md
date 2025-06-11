@@ -29,7 +29,7 @@ This version of the PDP-11/05 Console Adapter project (version 2) is based on th
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[Power Source](#power-source)**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[Virtual Paper Tape Reader](#virtual-paper-tape-reader)**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[M9301/M9312 Console Loader](#m9301m9312-console-loader)**<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[FLASH-based File Library](#flash-based-file-library)**<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[On-device File Library](#on-device-file-library)**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[XMODEM File Upload](#xmodem-file-upload)**<br>
 **[Schematic](#schematic)**<br>
 **[PCB Design Files](#pcb-design-files)**<br>
@@ -63,7 +63,7 @@ The Console Adapter appears to the host computer as a standard USB COM device. A
 
 When the Console Adapter receives a Line Coding request it adjusts the configuration of the console UART and baud clock generator to match the requested data rate and serial format. Serial configuration changes happen on the fly and can be made at any time. If desired, the auxiliary terminal interface can also be set to automatically adjust to the new configuration.
 
-The choice to dynamically adjust the serial configuration based on a request from the host can be enabled or disabled independently for both the SCL and auxiliary terminal ports. When this feature is disabled, the serial configuration is controlled by a setting in the Console Adapter's settings menu. These settings are persisted in FLASH and survive adapter reboots.
+The choice to dynamically adjust the serial configuration based on a request from the host can be enabled or disabled independently for both the SCL and auxiliary terminal ports. When this feature is disabled, the serial configuration is controlled by a setting in the Console Adapter's settings menu. These settings are persisted in flash and survive adapter reboots.
 
 ### Status LEDs
 
@@ -96,15 +96,15 @@ The loader includes special support for loading the PDP-11 Bootstrap Loader (the
 
 A similar feature is available for loading the Absolute Loader, which allows for bypassing the Bootstrap Loader step completely.
 
-### Persistent File Library
+### On-device File Library
 
-The Console Adapter supports the ability to load frequently used paper tape images, and other types of data files, into the Pico's FLASH memory such that they are readily available for use when working with the PDP-11. A python-based command line tool is provided that gathers together a set of data files into a .uf2 file which then can be written to FLASH using one of the standard Pico firmware update processes (e.g. by dragging it onto the Pico's virtual disk). Once programmed into FLASH, the files are available for mounting on the virtual paper tape reader, or loading directly into memory using the M9301/M9312 console loader feature.
+The Console Adapter supports the ability to load frequently used paper tape images and other types of data files into the Pico's flash memory such that they are readily available for use when working with the PDP-11. A python-based command line tool is provided that gathers a set of data files into a .uf2 file which then can be written to flash using one of the standard Pico firmware update processes (e.g. by dragging it onto the Pico's virtual disk). Once programmed in flash, files in the library are available for mounting on the virtual paper tape reader, or loading directly into memory using the M9301/M9312 console loader feature.
 
-1MiB of FLASH memory is reserved for file storage. Any number of files may be stored in this memory, with each file consuming a maximum of 64KiB.
+1MiB of flash memory is available for file storage. Up to 36 files may be stored in this memory, with each file limited to a maximum of 128KiB.
 
 ### XMODEM File Upload
 
-In addition to files stored in the FLASH-based file library, data files can be uploaded to the Console Adapter using the XMODEM file transfer protocol. Files can be uploaded either via the USB interface or the auxiliary terminal interface using appropriate XMODEM software on the sending side. Once uploaded, a file can be used repeatedly for mounting on the virtual paper tape reader or loading via the console loader.
+In addition to files stored in flash, data files can be uploaded to the Console Adapter using the XMODEM file transfer protocol. Files can be uploaded either via the USB interface or the auxiliary terminal interface using appropriate XMODEM software on the sending side. Once uploaded, a file can be used repeatedly for mounting on the virtual paper tape reader or loading via the console loader.
 
 Uploaded files are stored in RAM on the Console Adapter and are limited to 64KiB in size.
 

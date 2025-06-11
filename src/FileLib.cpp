@@ -18,7 +18,7 @@
 #include <inttypes.h>
 
 #include "ConsoleAdapter.h"
-#include "FileSet.h"
+#include "FileLib.h"
 #include "crc32.h"
 
 struct alignas(4) FileHeader final
@@ -32,15 +32,15 @@ struct alignas(4) FileHeader final
     const FileHeader * Next(void) const;
 };
 
-const FileHeader * FileSet::sFileIndex[MAX_FILES];
-size_t FileSet::sNumFiles;
+const FileHeader * FileLib::sFileIndex[MAX_FILES];
+size_t FileLib::sNumFiles;
 
 // Start and end of file storage area in flash.
 // Defined in linker script.
 extern uint8_t __FileStorageStart;
 extern uint8_t __FileStorageEnd;
 
-void FileSet::Init(void)
+void FileLib::Init(void)
 {
     // Scan the file storage area in flash for valid files and build an index
     for (auto file = (const FileHeader *)&__FileStorageStart; file != NULL && file->IsValid(); file = file->Next()) {
@@ -52,12 +52,12 @@ void FileSet::Init(void)
     }
 }
 
-size_t FileSet::NumFiles(void)
+size_t FileLib::NumFiles(void)
 {
     return sNumFiles;
 }
 
-bool FileSet::GetFile(size_t index, const char *& fileName, const uint8_t*& data, size_t& len)
+bool FileLib::GetFile(size_t index, const char *& fileName, const uint8_t*& data, size_t& len)
 {
     if (index < sNumFiles) {
         fileName = sFileIndex[index]->Name;
@@ -73,7 +73,7 @@ bool FileSet::GetFile(size_t index, const char *& fileName, const uint8_t*& data
     }
 }
 
-const char * FileSet::GetFileName(size_t index)
+const char * FileLib::GetFileName(size_t index)
 {
     return (index < sNumFiles) ? sFileIndex[index]->Name : NULL;
 }

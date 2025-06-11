@@ -20,7 +20,7 @@ add_executable(pdp1105-console-adapter
     src/BootstrapLoader.cpp
     src/crc32.c
     src/DiagMode.cpp
-    src/FileSet.cpp
+    src/FileLib.cpp
     src/HostPort.cpp
     src/LDADataSource.cpp
     src/LoadFileMode.cpp

@@ -121,14 +121,14 @@
 #define PWM_DIVISOR_INT 2
 #define PWM_DIVISOR_FRACT 3
 
-// Maximum number of files
+// Maximum number of files in the file library
 // NOTE: must be <= available selection keys ('0'-'9' and 'a'-'z')
 #define MAX_FILES 36
 
 // Maximum file name length
 #define MAX_FILE_NAME_LEN 32
 
-// Input character to invoke the adapter menu while in terminal mode
+// Input character to invoke the menu mode while in terminal mode
 #define MENU_KEY '\036' // Ctrl+^
 
 // Maximum size of an uploaded file

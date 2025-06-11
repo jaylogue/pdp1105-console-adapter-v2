@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef BUILT_IN_FILE_SET_H
-#define BUILT_IN_FILE_SET_H
+#ifndef FILE_LIB_H
+#define FILE_LIB_H
 
 struct FileHeader;
 
-class FileSet final
+class FileLib final
 {
 public:
     static void Init(void);
@@ -32,4 +32,4 @@ private:
     static size_t sNumFiles;
 };
 
-#endif // BUILT_IN_FILE_SET_H
+#endif // FILE_LIB_H

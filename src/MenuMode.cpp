@@ -109,7 +109,7 @@ void MenuMode(Port& uiPort)
 static inline
 char FileIndexToSelector(size_t index)
 {
-    return (char)(index < 10 ? '0' + index : 'a' + (index = 10));
+    return (char)(index < 10 ? '0' + index : 'a' + (index - 10));
 }
 
 static inline
@@ -145,7 +145,7 @@ void MountPaperTape(Port& uiPort)
     case '\e':
         return;
     default:
-        FileSet::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
+        FileLib::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
         break;
     }
 
@@ -245,7 +245,7 @@ void LoadFile(Port& uiPort)
     case '\e':
         break;
     default:
-        FileSet::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
+        FileLib::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
         if (LDAReader::IsValidLDAFile(fileData, fileLen)) {
             LoadLDAFile(uiPort, fileName, fileData, fileLen);
         }
@@ -365,10 +365,10 @@ const Menu * BuildFileMenu(bool includeBootstrap)
 
     MenuItem * item = sMenuItems;
 
-    size_t numFiles = FileSet::NumFiles();
+    size_t numFiles = FileLib::NumFiles();
     if (numFiles > 0) {
         for (size_t i = 0; i < numFiles; i++) {
-            *item++ = (MenuItem) { FileIndexToSelector(i), FileSet::GetFileName(i) };
+            *item++ = (MenuItem) { FileIndexToSelector(i), FileLib::GetFileName(i) };
         }
     }
     else {

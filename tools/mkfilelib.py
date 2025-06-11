@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Paper Tape File Set Builder for PDP-11/05 Console Adapter
+Tool for creating a file library image for the PDP-11/05 Console Adapter
 
-This script builds a paper tape file set for the PDP-11/05 Console Adapter. It takes
-a list of input files and creates a UF2 file that can be directly flashed onto the
-Console Adapter.
+This script takes an output file name, followed by a list of input files, and
+creates an file library image file suitable for writing into the flash memory
+of the PDP-11/05 Console Adapter.  The output file is in UF2 format, and thus
+can be dragged directly onto the virtual drive created by the Raspberry Pi Pico
+when in bootloader mode.
 """
 
 import sys
 import os
 import struct
 import zlib
-import binascii
 import argparse
 
 def errorExit(message):
@@ -19,8 +20,8 @@ def errorExit(message):
     print(f"ERROR: {message}", file=sys.stderr)
     sys.exit(1)
 
-# File set structure constants
-# Note: these must align with the FileSet C++ code
+# File library structure constants
+# Note: these must align with the FileLib C++ code
 MAX_FILE_NAME_LEN = 32
 MAX_FILE_SIZE = 128 * 1024
 HEADER_FORMAT = "<II{}s".format(MAX_FILE_NAME_LEN)  # uint32_t checksum, uint32_t length, char[MAX_FILE_NAME_LEN]
@@ -46,7 +47,7 @@ PICO_FLASH_BASE_ADDR = 0x10000000 # equal to XIP_BASE in Pico SDK
 # Total Pico flash size 
 PICO_TOTAL_FLASH_SIZE = 2 * 1024 * 1024
 
-# Default file set base address
+# Default file library base address
 DEFAULT_BASE_ADDR = PICO_FLASH_BASE_ADDR + (PICO_TOTAL_FLASH_SIZE//2)
 
 def createHeader(name, length):
@@ -100,11 +101,11 @@ def createUf2Block(addr, data, blockNo, totalBlocks, familyId=UF2_FAMILY_ID_RP20
     
     return block
 
-def buildFilesetImage(fileNames, maxFilesetSize):
+def buildLibImage(fileNames, maxLibSize):
     """
-    Build a binary file set image from the input files.
+    Build a binary image of the file library as it will appear in memory on the Pico.
     """
-    filesetImage = bytearray()
+    libImage = bytearray()
     
     # Process each input file
     for fileName in fileNames:
@@ -138,34 +139,34 @@ def buildFilesetImage(fileNames, maxFilesetSize):
         crc = zlib.crc32(headerWithoutChecksum)
         crc = zlib.crc32(fileData, crc)
         
-        # Prepend the header, including the checksum, and the file data to the file set image
-        filesetImage += struct.pack("<I", crc)
-        filesetImage += headerWithoutChecksum
-        filesetImage += fileData
+        # Prepend the header, including the checksum, and the file data to the file library image
+        libImage += struct.pack("<I", crc)
+        libImage += headerWithoutChecksum
+        libImage += fileData
         
         # Pad to align the next header
-        paddingSize = (HEADER_ALIGNMENT - (len(filesetImage) % HEADER_ALIGNMENT)) % HEADER_ALIGNMENT
-        filesetImage += b'\0' * paddingSize
+        paddingSize = (HEADER_ALIGNMENT - (len(libImage) % HEADER_ALIGNMENT)) % HEADER_ALIGNMENT
+        libImage += b'\0' * paddingSize
 
-        if len(filesetImage) > maxFilesetSize:
-            errorExit(f"File set is too large (max size is { maxFilesetSize / 1024 }KiB)")
+        if len(libImage) > maxLibSize:
+            errorExit(f"File library is too large (max size is { maxLibSize / 1024 }KiB)")
 
-    # Write an empty file header to mark the end of the file set
-    filesetImage += b'\0' * HEADER_SIZE
+    # Write an empty file header to mark the end of the file library
+    libImage += b'\0' * HEADER_SIZE
 
-    return filesetImage
+    return libImage
 
-def writeUf2File(outputFilePath, filesetImage, baseAddr):
+def writeUf2File(outputFilePath, libImage, baseAddr):
     """
-    Write the fileset image into a UF2 file using the specified base address.
+    Write a file library image into a UF2 file using the specified base address.
     """
     # Pad the image data to a multiple of the RPi Pico flash sector size
-    paddingSize = (PICO_FLASH_SECTOR_SIZE - (len(filesetImage) % PICO_FLASH_SECTOR_SIZE)) % PICO_FLASH_SECTOR_SIZE
+    paddingSize = (PICO_FLASH_SECTOR_SIZE - (len(libImage) % PICO_FLASH_SECTOR_SIZE)) % PICO_FLASH_SECTOR_SIZE
     if paddingSize > 0:
-        filesetImage = filesetImage + bytearray(b'\0' * paddingSize)
+        libImage = libImage + bytearray(b'\0' * paddingSize)
     
     # Calculate number of blocks needed
-    totalBlocks = (len(filesetImage) + UF2_PAYLOAD_SIZE - 1) // UF2_PAYLOAD_SIZE
+    totalBlocks = (len(libImage) + UF2_PAYLOAD_SIZE - 1) // UF2_PAYLOAD_SIZE
     
     try:
         with open(outputFilePath, 'wb') as outputFile:
@@ -173,10 +174,10 @@ def writeUf2File(outputFilePath, filesetImage, baseAddr):
             for blockNo in range(totalBlocks):
                 # Calculate data offset and size for this block
                 dataOffset = blockNo * UF2_PAYLOAD_SIZE
-                dataSize = min(UF2_PAYLOAD_SIZE, len(filesetImage) - dataOffset)
+                dataSize = min(UF2_PAYLOAD_SIZE, len(libImage) - dataOffset)
                 
                 # Get data for this block
-                blockData = filesetImage[dataOffset:dataOffset + dataSize]
+                blockData = libImage[dataOffset:dataOffset + dataSize]
                 
                 # Calculate target address for this block
                 targetAddr = baseAddr + dataOffset
@@ -189,28 +190,30 @@ def writeUf2File(outputFilePath, filesetImage, baseAddr):
 
 def main():
     """
-    Main function to process command line arguments and build the file set.
+    Main function to process command line arguments and build the file library image file.
     """
     try:
         # Parse command line arguments
-        parser = argparse.ArgumentParser(description='Build a paper-tape file set that can be flashed onto the PDP-11/05 Console Adapter')
-        parser.add_argument('outputFile', metavar='<output-file>', help='Output flash image file (UF2 format)')
-        parser.add_argument('inputFiles', metavar='<input-file>', nargs='+', help='Input paper tape files to include in the file set')
+        parser = argparse.ArgumentParser(description='Build a file library image file for the PDP-11/05 Console Adapter')
+        parser.add_argument('outputFile', metavar='<output-file>', help='Name of the library image file to be created (UF2 format)')
+        parser.add_argument('inputFiles', metavar='<input-file>', nargs='+', help='Name(s) of files to be included in the file library')
         parser.add_argument('--base-addr', type=lambda x: int(x, 0), default=DEFAULT_BASE_ADDR,
-                            help='Base address in flash for file set (default: 0x{:08X})'.format(DEFAULT_BASE_ADDR))
+                            help='Base address for the file library in memory (default: 0x{:08X})'.format(DEFAULT_BASE_ADDR))
         args = parser.parse_args()
 
-        maxFilesetSize = (PICO_FLASH_BASE_ADDR + PICO_TOTAL_FLASH_SIZE) - args.base_addr
+        maxLibSize = (PICO_FLASH_BASE_ADDR + PICO_TOTAL_FLASH_SIZE) - args.base_addr
 
-        # Build the fileset memory image
-        filesetImage = buildFilesetImage(args.inputFiles, maxFilesetSize)
+        print(f"Creating file library image")
 
-        print(f"File set created ({ len(args.inputFiles) } files, { len(filesetImage) } bytes)")
+        # Build the file library memory image
+        libImage = buildLibImage(args.inputFiles, maxLibSize)
 
-        # Create a UF2 file to load the fileset into the target flash location.
-        writeUf2File(args.outputFile, filesetImage, args.base_addr)
+        print(f"File library image created ({ len(args.inputFiles) } files, { len(libImage) } bytes)")
 
-        print(f"Flash image file created: {args.outputFile} ({os.path.getsize(args.outputFile)} bytes)")
+        # Create a UF2 file to load the file library into the target flash location.
+        writeUf2File(args.outputFile, libImage, args.base_addr)
+
+        print(f"File library image written to {args.outputFile} ({os.path.getsize(args.outputFile)} bytes)")
 
         print("Done")
 
