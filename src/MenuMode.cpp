@@ -38,12 +38,12 @@ static void LoadLDAFile(Port& uiPort, const char * fileName, const uint8_t * fil
 static void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileData, size_t fileLen);
 static void UploadAndLoadFile(Port& uiPort);
 static void LoadPreviouslyUploadedFile(Port& uiPort);
-static char SelectFile(Port& uiPort, bool includeBootstrap);
-static const Menu * BuildFileMenu(bool includeBootstrap);
+static char SelectFile(Port& uiPort, const char * title, bool includeBootstrap);
+static const Menu * BuildFileMenu(const char * title, bool includeBootstrap);
 static void SettingsMenu(Port& uiPort);
 static void DiagMenu(Port& uiPort);
 static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
-static bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal);
+static bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal = UINT32_MAX);
 static bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig);
 static bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressBar);
 static const char * ToString(const SerialConfig& serialConfig, char * buf, size_t bufSize);
@@ -124,7 +124,7 @@ void MountPaperTape(Port& uiPort)
     const uint8_t * fileData;
     size_t fileLen;
     
-    char sel = SelectFile(uiPort, false);
+    char sel = SelectFile(uiPort, "MOUNT PAPER TAPE:", false);
     switch (sel) {
     case 'A':
         fileName = "Absolute Loader";
@@ -169,7 +169,7 @@ void AdapterStatus(Port& uiPort)
         gSCLPort.CheckConnected() ? "connected" : "disconnected"
     );
 
-    uiPort.Printf("  Aux Port: %s (%s)\r\n",
+    uiPort.Printf("  AUX Port: %s (%s)\r\n",
         ToString(gAuxPort.GetConfig(), buf, sizeof(buf)),
         (Settings::AuxConfigFollowsUSB && gAuxPort.GetConfig() != Settings::AuxConfig) 
             ? "set via USB"
@@ -227,7 +227,7 @@ void LoadFile(Port& uiPort)
     const uint8_t *fileData;
     size_t fileLen;
 
-    char sel = SelectFile(uiPort, true);
+    char sel = SelectFile(uiPort, "LOAD FILE:", true);
     switch (sel) {
     case 'A':
         LoadAbsoluteLoader(uiPort);
@@ -310,7 +310,7 @@ void LoadSimpleFile(Port& uiPort, const char * fileName, const uint8_t * fileDat
     static uint32_t sDefaultLoadAddr = 0;
 
     do {
-        uiPort.Printf(INPUT_PROMPT "ENTER LOAD ADDRESS [%" PRId32 "]: ", sDefaultLoadAddr);
+        uiPort.Write(INPUT_PROMPT "INPUT LOAD ADDRESS (in octal): " );
         if (!GetInteger(uiPort, loadAddr, 8, sDefaultLoadAddr)) {
             return;
         }
@@ -345,23 +345,24 @@ void LoadPreviouslyUploadedFile(Port& uiPort)
     }
 }
 
-char SelectFile(Port& uiPort, bool includeBootstrap)
+char SelectFile(Port& uiPort, const char * title, bool includeBootstrap)
 {
-    const Menu * fileMenu = BuildFileMenu(includeBootstrap);
+    const Menu * fileMenu = BuildFileMenu(title, includeBootstrap);
     fileMenu->Show(uiPort);
     return fileMenu->GetSelection(uiPort);
 }
 
-const Menu * BuildFileMenu(bool includeBootstrap)
+const Menu * BuildFileMenu(const char * title, bool includeBootstrap)
 {
     static MenuItem sMenuItems[MAX_FILES + 10];
     static Menu sMenu = {
-        .Title = "SELECT FILE:",
         .Items = sMenuItems,
         .NumCols = 2,
         .ColWidth = -1,
         .ColMargin = 2
     };
+
+    sMenu.Title = title;
 
     MenuItem * item = sMenuItems;
 
@@ -409,8 +410,8 @@ void SettingsMenu(Port& uiPort)
         { 's', "Default SCL config", sSCLConfigValue            },
         { 'S', "SCL follows USB",    sSCLConfigFollowsUSBValue  },
         { 'p', "Show PTR progress",  sShowPTRProgressValue      },
-        { 'a', "Default Aux config", sAuxConfigValue            },
-        { 'A', "Aux follows USB",    sAuxConfigFollowsHostValue },
+        { 'a', "Default AUX config", sAuxConfigValue            },
+        { 'A', "AUX follows USB",    sAuxConfigFollowsHostValue },
         MenuItem::SEPARATOR(),
         { '\e', "Return to terminal mode"                       },
         MenuItem::HIDDEN(CTRL_C),
@@ -517,7 +518,7 @@ bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW)
     static uint32_t sDefaultMemSizeKW = 28;
 
     do {
-        uiPort.Printf(INPUT_PROMPT "ENTER SYSTEM MEMORY SIZE (KW) [%" PRId32 "]: ", sDefaultMemSizeKW);
+        uiPort.Write(INPUT_PROMPT "INPUT SYSTEM MEMORY SIZE (in KW): ");
         if (!GetInteger(uiPort, memSizeKW, 10, sDefaultMemSizeKW)) {
             return false;
         }
@@ -530,10 +531,18 @@ bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW)
 
 bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal)
 {
-    int charCount = 0;
+    int valLen = 0;
+    int defaultLen = 0;
     char ch;
 
     val = 0;
+
+    // If a default value was supplied, display it and reposition the cursor
+    // over the first digit
+    if (defaultVal != UINT32_MAX) {
+        defaultLen = uiPort.Printf((base == 10) ? "%" PRIu32 : "%" PRIo32, defaultVal);
+        for (auto i = 0; i < defaultLen; i++) { uiPort.Write(BS); }
+    }
 
     while (true) {
         // Update the state of the activity LEDs
@@ -551,7 +560,7 @@ bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal)
             }
 
             if (ch == '\r') {
-                if (charCount == 0) {
+                if (valLen == 0) {
                     val = defaultVal;
                 }
                 uiPort.Write("\r\n");
@@ -562,13 +571,28 @@ bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal)
                 (base == 8 && ch >= '0' && ch <= '7')) {
                 uiPort.Write(ch);
                 val = (val * base) + (ch - '0');
-                charCount++;
+                valLen++;
+
+                // If this is the first digit to be entered, erase the remaining characters
+                // of the default value, if any, and reposition the cursor back to where
+                // the next digit will be entered.
+                if (valLen == 1) {
+                    for (auto i = 1; i < defaultLen; i++) { uiPort.Write(' '); }
+                    for (auto i = 1; i < defaultLen; i++) { uiPort.Write(BS); }
+                }
             }
 
-            else if ((ch == BS || ch == DEL) && charCount > 0) {
+            else if ((ch == BS || ch == DEL) && valLen > 0) {
                 uiPort.Write(RUBOUT);
-                val = val / 10;
-                charCount--;
+                val = val / base;
+                valLen--;
+
+                // If all the input digits have been erased, redisplay the default value
+                // if one was supplied.
+                if (valLen == 0 && defaultVal != UINT32_MAX) {
+                    defaultLen = uiPort.Printf((base == 10) ? "%" PRIu32 : "%" PRIo32, defaultVal);
+                    for (auto i = 0; i < defaultLen; i++) { uiPort.Write(BS); }
+                }
             }
         }
     }
@@ -648,7 +672,7 @@ bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressB
 {
     static const MenuItem sMenuItems[] = {
         { '0', "On"                 },
-        { '1', "USB interface only" },
+        { '1', "USB only" },
         { '2', "Off"                },
         MenuItem::HIDDEN(CTRL_C),
         MenuItem::HIDDEN('\e'),
