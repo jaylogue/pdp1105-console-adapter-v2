@@ -1,6 +1,6 @@
 # PDP-11/05 Console Adapter
 
-<img src="images/pdp1105-console-adapter-v2-2.jpg" width="1024"/>
+<img src="docs/media/pdp1105-console-adapter-v2-3.jpg" width="1024"/>
 
 The *PDP-11/05 Console Adapter* is a hardware device which acts as a USB and RS-232 serial interface to the console of a [PDP-11/05](http://gunkies.org/wiki/PDP-11/05) minicomputer. The Console Adapter provides a number of useful features for working with the PDP-11/05:
 
@@ -33,6 +33,7 @@ This version of the PDP-11/05 Console Adapter project (version 2) is based on th
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[XMODEM File Upload](#xmodem-file-upload)**<br>
 **[Schematic](#schematic)**<br>
 **[PCB Design Files](#pcb-design-files)**<br>
+**[User Documentation](#user-documentation)**<br>
 **[License](#license)**<br>
 
 ## How it Works
@@ -112,7 +113,7 @@ Uploaded files are stored in RAM on the Console Adapter and are limited to 64KiB
 
 The following diagram shows the schematic for the PDP-11/05 Console USB Adapter:
 
-<img src="pcb/pdp1105-console-adapter-v2-schematic.png" width="1024"/>
+<img src="docs/media/pdp1105-console-adapter-schematic.png" width="1024"/>
 
 A PDF version of the schematic is available [here](pcb/pdp1105-console-adapter-v2-schematic.pdf).
 
@@ -121,6 +122,10 @@ Note that the Console Adapter schematic uses modern pin numbering for the consol
 ## KiCad Design Files
 
 A KiCad project containing the schematic and a layout file for a two-layer PCB is available in the [pcb](pcb) folder.
+
+## User Documentation
+
+A User Manual for the PDP-11/05 Console Adapter is available [here](docs/pdp1105-console-adapter-user-manual.md).
 
 ## License
 
