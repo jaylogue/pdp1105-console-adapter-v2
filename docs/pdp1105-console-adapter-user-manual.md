@@ -74,7 +74,9 @@ Additionally, the Pico's onboard LED mimics the behavior of the Power/Activity L
 
 The Console Adapter operates on +5 volts. The adapter can receive power either directly from the PDP-11/05 or via a USB connection to a host computer. Both power sources can be active at the same time, and the USB port can be connected or disconnected on the fly while the adapter is connected to the PDP-11.
 
-**CAUTION**: The same is not true for the SCP port. **Do not hot plug/unplug the Console Adapter to the 11/05**. It is not designed to support this.
+_**CAUTION**: Do not hot plug/unplug the Console Adapter to the PDP-11. It is not designed to support this._
+
+_**CAUTION**: The Console Adapter is not internally isolated. As a consequence, when the adapter is connected to both the PDP-11 and a host computer via USB, the grounds of the two systems are electrically connected. To avoid ground potential differences, ensure that both the PDP and the host computer are connected to the same power circuit and that both systems are suitably earth grounded._
 
 ### Connecting the Console Adapter to a PDP-11/05
 
@@ -82,7 +84,7 @@ The Console Adapter must be connected to the PDP-11/05 using a 40-pin ribbon cab
 
 The SCP port on the PDP-11/05 predates modern connector standards. As such, it lacks the slot needed to accept the square registration "key" present on most modern ribbon cable connectors. Because of this, it is necessary to file off the registration key on one connector when making an SCL cable out of modern components.
 
-**CAUTION**: The lack of the registration key on the SCL connector means that it is possible to connect the SCL cable to the PDP-11 in the wrong orientation. Therefore, **be especially careful to orient the SCL cable correctly when connecting it to the PDP-11**.  In particular, pin 1 on the SCL cable connector should be positioned such that it is towards to the right-hand side of the PDP-11 when looking at the system from behind. On most ribbon cables, pin 1 can be identified by the presence of a small triangle on one side of the connector, or by the red stripe on one edge of the ribbon cable.
+_**CAUTION**: The lack of the registration key on the SCL connector means that it is possible to connect the SCL cable to the PDP-11 in the wrong orientation. Therefore, **be especially careful to orient the SCL cable correctly when connecting it to the PDP-11**.  In particular, SCL cable connector should be positioned such that **pin 1 is towards to the right-hand side of the PDP-11** when looking at the system from behind. On most ribbon cables, pin 1 can be identified by the presence of a small triangle on one side of the connector, or by the red stripe on one edge of the ribbon cable._
 
 ### Connecting to a USB Host Computer
 
@@ -124,12 +126,16 @@ By default, the AUX port is configured as a DCE device, making it possible to us
 A typical auxiliary terminal cable would be wired as follows:
 
 | Terminal End<br/>(DB25 -M or -F) | Console Adapter End<br/>(DE9-M) | Signal |
-|-----|-----|-----|
+|:-----:|:-----:|:-----:|
 | 2   | 3   | TD  |
 | 3   | 2   | RD  |
 | 7   | 5   | GND |
 
-If needed, the AUX port can be converted to a DTE configuration by changing jumpers JP1 and JP2 located on the underside of the Console Adapter PCB. This requires cutting the traces between pads 1 and 2 on both jumpers and creating a solder bridge between the other two pads. Note that, while this change is straightforward to do, it is likely easier to use a null-modem adapter, or a cable with null-modem wiring.
+If needed, the AUX port can be converted to DTE configuration by changing jumpers JP1 and JP2 located on the underside of the Console Adapter PCB. This requires cutting the traces between pads 1 and 2 on both jumpers and creating a solder bridge between the other two pads.
+
+Note that, while this change is straightforward to do, it is likely easier to use a null-modem adapter, or a cable with null-modem wiring.
+
+_**CAUTION**: An early revision of the Console Adapter PCB (rev 4.1) contains an error in the silkscreen labeling for JP1 and JP2. On these boards, the AUX DTE/DCE jumper positions are **opposite** to what is shown on the PCB. You can identify an old board by the positioning of the words on the silkscreen: "DCE" will be on the left, and "DTE" will be on the right. In actuality, these labels should be reversed._
 
 ### Performing a Loop-back Test
 
@@ -178,9 +184,9 @@ Characters are relayed transparently between the USB and AUX ports and the PDP-1
 
 **Menu Mode** provides access to the various features of the Console Adapter, including mounting and unmounting virtual paper tapes, loading files via the M9312/M9301 console, changing adapter settings and viewing adapter status.
 
-To enter Menu Mode from Terminal Mode press the menu key: *CTRL+^* (Control Shift 6). Upon entering Menu Mode, the adapter displays the Main Menu:
+To enter Menu Mode from Terminal Mode press the menu key: `CTRL+^` (Control Shift 6). Upon entering Menu Mode, the adapter displays the Main Menu:
 
-```txt
+```
 *** MAIN MENU:
   m) Mount paper tape           l) Load file using M93xx console
   u) Unmount paper tape         S) Adapter settings
@@ -193,9 +199,9 @@ To enter Menu Mode from Terminal Mode press the menu key: *CTRL+^* (Control Shif
 
 While in Menu Mode, requests for user input are indicated by a `>>>` prompt. Menu choices are made by pressing the single (case sensitive) key shown before each menu option.
 
-In most contexts, pressing *ESC* or *CTRL+C* will will exit menu mode and return the adapter to Terminal Mode.
+In most contexts, pressing `ESC` or `CTRL+C` will will exit menu mode and return the adapter to Terminal Mode.
 
-Pressing *CTRL+^* from the Main Menu will send the menu key character to the PDP-11.
+Pressing `CTRL+^` from the Main Menu will send the menu key character to the PDP-11.
 
 Menu Mode can be entered from either the USB port or the AUX port. The menu UI only displays on the port from which it was invoked.
 
@@ -209,7 +215,7 @@ Note that the mount status of the virtual paper tape reader, and the logical pos
 
 ### Mounting a Paper Tape Image
 
-To mount a paper tape image, choose the **Mount paper tape** option from the Main Menu (key sequence *CTRL+^ m*). This will show Mount Paper Tape menu:
+To mount a paper tape image, choose the **Mount paper tape** option from the Main Menu (key sequence: `CTRL+^ m`). This will show Mount Paper Tape menu:
 
 ```
 *** MOUNT PAPER TAPE:
@@ -225,11 +231,11 @@ X) Upload file via XMODEM      ESC) Return to terminal mode
 
 The first half of the menu shows the files stored in the device's File Library. To choose these, press the associated option key.
 
-In the second half of the menu, the **Absolute Loader** option (key sequence *CTRL+^ m A*) can be used to mount a copy of the Absolute Loader paper tape image.
+In the second half of the menu, the **Absolute Loader** option (key sequence: `CTRL+^ m A`) can be used to mount a copy of the Absolute Loader paper tape image.
 
-Select the **Upload file via XMODEM** option (key sequence *CTRL+^ m X*) to mount a tape image uploaded from a terminal program using the XMODEM protocol.
+Select the **Upload file via XMODEM** option (key sequence: `CTRL+^ m X`) to mount a tape image uploaded from a terminal program using the XMODEM protocol.
 
-To mount a file that had been uploaded previously via XMODEM, select the **Previously uploaded file** option (key sequence *CTRL+^ m P*). Note that this option will not appear if no file has been uploaded.
+To mount a file that had been uploaded previously via XMODEM, select the **Previously uploaded file** option (key sequence: `CTRL+^ m P`). Note that this option will not appear if no file has been uploaded.
 
 When a paper tape image is mounted, any previously mounted tape image is unmounted first.
 
@@ -237,13 +243,13 @@ Once a selection is made, the Console Adapter returns to Terminal Mode.
 
 ### Unmounting a Paper Tape Image
 
-The currently mounted paper tape image can be unmounted using the **Unmount paper tape** option from the Main Menu (key sequence *CTRL+^ u*).
+The currently mounted paper tape image can be unmounted using the **Unmount paper tape** option from the Main Menu (key sequence: `CTRL+^ u`).
 
 If there is no paper tape mounted, choosing this option has no effect.
 
 ### Viewing Status of the Paper Tape Reader
 
-To view the status of the paper tape reader choose the **Adapter status** option from the Main Menu (key sequence *CTRL+^ s*). The status shows the name of the paper tape image that is currently mounted (if any) and the current position of the tape in the virtual paper tape reader.
+To view the status of the paper tape reader choose the **Adapter status** option from the Main Menu (key sequence: `CTRL+^ s`). The status shows the name of the paper tape image that is currently mounted (if any) and the current position of the tape in the virtual paper tape reader.
 
 ## M9312/M9301 Console Loader
 
@@ -255,7 +261,7 @@ The Console Adapter includes special support for loading the PDP-11 Bootstrap Lo
 
 ### Loading Absolute Loader (LDA) Files
 
-To load an Absolute Loader (LDA) file, select the **Load file using M93xx console** option from the Main Menu (key sequence *CTRL+^ l*). This will show Load File menu:
+To load an Absolute Loader (LDA) file, select the **Load file using M93xx console** option from the Main Menu (key sequence: `CTRL+^ l`). This will show Load File menu:
 
 ```
 *** LOAD FILE:
@@ -278,7 +284,7 @@ Once the load operation has completed, the Console Adapter returns to Terminal M
 
 ### Loading Simple Data Files
 
-Loading a simple (non-LDA) data file is similar to loading an LDA file. Select the **Load file using M93xx console** option from the Main Menu (key sequence *CTRL+^ l*), which will show Load File menu:
+Loading a simple (non-LDA) data file is similar to loading an LDA file. Select the **Load file using M93xx console** option from the Main Menu (key sequence: `CTRL+^ l`), which will show Load File menu:
 
 ```
 *** LOAD FILE:
@@ -307,7 +313,7 @@ Once an address has been entered, the Console Adapter will load the contents of 
 
 The Console Adapter provides a special option for loading the [PDP-11 Bootstrap Loader](https://gunkies.org/wiki/PDP-11_Bootstrap_Loader) via the M9312 / M9301 console ROM. This feature can be used to avoid the need to toggle the loader into the system using the console switches.
 
-To load the Bootstrap Loader, select the **Load file using M93xx console** option from the Main Menu and choose the **Bootstrap Loader** option (key sequence *CTRL+^ l B*).
+To load the Bootstrap Loader, select the **Load file using M93xx console** option from the Main Menu and choose the **Bootstrap Loader** option (key sequence: `CTRL+^ l B`).
 
 The Console Adapter will then prompt for the system memory size:
 
@@ -343,7 +349,7 @@ Note that, while traditionally, the Bootstrap Loader is used as the first step i
 
 The Console Adapter provides the ability to load the PDP-11 Absolute Loader directly into memory using the M9312 / M9301 console.  This makes it possible to bypass the step of entering and running the Bootstrap Loader. Technically, when operated this way, the Console Adapter loads both Absolute Loader and the Bootstrap Loader in one step. This ensures that system memory is arranged the same as if the Boot Loader had been loaded as a separate step.
 
-To load the Absolute Loader directly, select the **Absolute Loader** option from the Load File Menu(key sequence *CTRL+^ l A*). Once selected, the Console Adapter will prompt for the system memory size:
+To load the Absolute Loader directly, select the **Absolute Loader** option from the Load File Menu (key sequence: `CTRL+^ l A`). Once selected, the Console Adapter will prompt for the system memory size:
 
 ```
 >>> INPUT SYSTEM MEMORY SIZE (in KW): 28
@@ -359,7 +365,7 @@ When the Absolute Loader starts, it expects to read a paper tape in LDA format f
 
 ## Adapter Settings
 
-The Console Adapter provides a number of options for controlling its behavior. To view or change the adapter's settings, select **Adapter settings** from the Main Menu (key sequence *CTRL+^ S*). This will display the Settings Menu:
+The Console Adapter provides a number of options for controlling its behavior. To view or change the adapter's settings, select **Adapter settings** from the Main Menu (key sequence: `CTRL+^ S`). This will display the Settings Menu:
 
 ```
 *** SETTINGS MENU:
@@ -376,13 +382,13 @@ Changes made to settings via the settings menu are persisted in the adapter's fl
 
 ### Changing the SCL Port Configuration
 
-The console adapter includes a baud clock generator which allows it to dynamically adjust the speed of the PDP-11/05's SCL port. While in Terminal Mode, the adapter listens for requests from the attached USB host to change the serial configuration. These requests are known as *CDC Line Coding Requests* in USB parlance. Most terminal emulator programs, such as PuTTY or minicom, provide a way to send serial configuration requests using a key sequence or menu option.
+The console adapter includes a baud clock generator which allows it to dynamically adjust the speed of the PDP-11/05's SCL port. While in Terminal Mode, the adapter listens for requests from the attached USB host to change the serial configuration. These requests are known as *CDC Line Coding Requests* in USB parlance. Most terminal emulator programs, such as PuTTY or minicom, provide a way to send serial configuration requests using a key sequence: or menu option.
 
 When the adapter receives a serial configuration change request, it automatically adjusts the SCL port to match the requested configuration, provided the request is for a configuration supported by the PDP-11/05. The console adapter supports all standard serial bit rates in the range 110 to 38400 (which is effectively the range supported by the PDP-11/05 UART hardware). Serial bit formats are limited to 8-N-1, 7-E-1 and 7-O-1, as these are the only ones that may be used on the PDP-11/05.
 
 Note that most terminal emulators will issue a request to change the serial configuration as soon as they connect to a USB COM device. The effect of this is that the SCL port's configuration will snap to whatever configuration is the default for the terminal emulator at the time it is started.
 
-By default, the console adapter is pre-configured to listen and react to serial change requests from the USB host. This feature can be disabled by changing the **SCL follows USB** setting to **off** in the **Settings Menu** (key sequence: *CTRL+^ S S*). When this setting is off, the adapter will always use the default SCL port configuration set in the Settings Menu (see below).
+By default, the console adapter is pre-configured to listen and react to serial change requests from the USB host. This feature can be disabled by changing the **SCL follows USB** setting to **off** in the **Settings Menu** (key sequence: `CTRL+^ S S`). When this setting is off, the adapter will always use the default SCL port configuration set in the Settings Menu (see below).
 
 ### Default SCL Port Configuration
 
@@ -390,7 +396,7 @@ If there is no USB connection when the Console Adapter boots, the adapter will c
 
 The default SCL configuration is preset to 9600-8-N-1, which is a reasonable configuration for most PDP-11 software.
 
-The default configuration can be changed by selecting the **Default SCL config** option in the **Settings Menu** (key sequence: *CTRL+^ S s*). This will display the Port Configuration Menu:
+The default configuration can be changed by selecting the **Default SCL config** option in the **Settings Menu** (key sequence: `CTRL+^ S s`). This will display the Port Configuration Menu:
 
 ```
 *** CHANGE SCL PORT CONFIG:
@@ -409,15 +415,15 @@ The current serial configuration is shown after the prompt. Selecting the variou
 
 ### Changing the AUX Port Configuration
 
-When the Console Adapter boots, it configures the AUX port using a set of default settings stored in persistent memory. These settings can be changed by choosing the **Default AUX config** option from via the adapter's Settings Menu (key sequence: *CTRL+^ S a*).
+When the Console Adapter boots, it configures the AUX port using a set of default settings stored in persistent memory. These settings can be changed by choosing the **Default AUX config** option from via the adapter's Settings Menu (key sequence: `CTRL+^ S a`).
 
 The AUX port configuration is preset to 9600-8-N-1.
 
-Similar to the SCL port, the AUX port can be configured to automatically adjust its serial configuration to match the configuration requested by an attached USB host. This feature is disabled by default, as most serial terminals cannot dynamically adapt their serial configuration on the fly. To enable automatic adjustment of the AUX port configuration, change the **AUX follows USB** setting to **on** in the Settings Menu (key sequence: *CTRL+^ S A*).
+Similar to the SCL port, the AUX port can be configured to automatically adjust its serial configuration to match the configuration requested by an attached USB host. This feature is disabled by default, as most serial terminals cannot dynamically adapt their serial configuration on the fly. To enable automatic adjustment of the AUX port configuration, change the **AUX follows USB** setting to **on** in the Settings Menu (key sequence: `CTRL+^ S A`).
 
 ### Controlling the Paper Tape Progress Bar
 
-Whenever the PDP-11 request a character from the virtual paper tape reader, the Console Adapter shows an animated progress bar depicting the logical position of the paper. This animation can be controlled by selecting the **Show PTR progress** option in the Settings Menu (key sequence: *CTRL+^ S p*). Three modes are available:
+Whenever the PDP-11 request a character from the virtual paper tape reader, the Console Adapter shows an animated progress bar depicting the logical position of the paper. This animation can be controlled by selecting the **Show PTR progress** option in the Settings Menu (key sequence: `CTRL+^ S p`). Three modes are available:
 
 ```
 *** SHOW PAPER TAPE READER PROGRESS BAR:
@@ -434,7 +440,7 @@ Whenever the PDP-11 request a character from the virtual paper tape reader, the 
 
 ## Adapter Status
 
-The current status of the Console Adapter can be view by selecting the **Adapter status** option from the Main menu (key sequence: *CTRL+^ S S*). The adapter status feature displays the current state of the SCL and AUX ports, as well as the virtual paper tape reader.
+The current status of the Console Adapter can be view by selecting the **Adapter status** option from the Main menu (key sequence: `CTRL+^ S S`). The adapter status feature displays the current state of the SCL and AUX ports, as well as the virtual paper tape reader.
 
 ```
 *** ADAPTER STATUS:

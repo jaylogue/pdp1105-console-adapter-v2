@@ -1,4 +1,4 @@
-# PDP-11/05 Console Adapter
+﻿# PDP-11/05 Console Adapter
 
 <img src="docs/media/pdp1105-console-adapter-v2-3.jpg" width="1024"/>
 
@@ -77,11 +77,9 @@ Additionally, the Pico's onboard LED mimics the behavior of the Power/Activity L
 
 ### Power Source
 
-The Console Adapter operates on +5 volts, which it can receive either from the PDP-11/05 itself or via the USB port. Because the Console Adapter can get its power directly from the PDP, it is possible to use the Console Adapter with only an auxiliary terminal connected, and without a USB connection to a host computer.
+The Console Adapter operates on +5 volts, which it can receive either from the PDP-11/05 itself or via the USB port. Because the Console Adapter can get its power directly from the PDP, it is possible to use the Console Adapter with only an auxiliary terminal connected.
 
-Both power sources can be active at the same time, and the USB port can be connected or disconnected on the fly. (**_Do not_** hot plug/unplug the Console Adapter to the 11/05's SCL port, as it is not designed to support this).
-
-_**CAUTION**: The Console Adapter is not internally isolated. As a consequence, when the adapter is connected to both the PDP-11 and a host computer via USB, the grounds of the two systems are electrically connected. To avoid ground potential differences, ensure that both the PDP and the host computer are connected to the same power circuit and that both systems are properly earth grounded._
+Both power sources can be active at the same time, and the USB port can be connected or disconnected on the fly. (However **_do not_** hot plug/unplug the Console Adapter to the 11/05's SCL port, as it is not designed to support this).
 
 ### Virtual Paper Tape Reader
 
