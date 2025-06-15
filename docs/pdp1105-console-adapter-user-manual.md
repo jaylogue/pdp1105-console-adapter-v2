@@ -28,6 +28,7 @@
   - [Default SCL Port Configuration](#default-scl-port-configuration)
   - [Changing the AUX Port Configuration](#changing-the-aux-port-configuration)
   - [Controlling the Paper Tape Progress Bar](#controlling-the-paper-tape-progress-bar)
+  - [Enabling/Disabling Uppercase Mode](#enablingdisabling-uppercase-mode)
 - [Adapter Status](#adapter-status)
 - [Flash File Library](#flash-file-library)
   - [Creating a File Library Image](#creating-a-file-library-image)
@@ -178,7 +179,7 @@ Upon boot, the Console Adapter automatically enters **Terminal Mode**. In Termin
 
 If an auxiliary terminal is connected to the AUX port, the adapter will also relay characters between the auxiliary terminal and the PDP-11. The USB and AUX ports can both be used simultaneously, and any characters output by the PDP-11 will be shown on both.
 
-Characters are relayed transparently between the USB and AUX ports and the PDP-11's SCL port, with the sole exception of the character used to invoke Menu Mode (see below).
+By default, most characters are relayed without modification between the USB and AUX ports and the PDP-11's SCL port.  An exception to this is the control key which used to invoke Menu Mode (see below).  Additionally, a special mode can be enabled that forces all characters sent to the PDP-11 to be uppercase (see [Enabling/Disabling Uppercase Mode](#enablingdisabling-uppercase-mode)).
 
 ### Menu Mode
 
@@ -371,7 +372,7 @@ The Console Adapter provides a number of options for controlling its behavior. T
 *** SETTINGS MENU:
   s) Default SCL config....9600-8-N-1  a) Default Aux config....9600-8-N-1
   S) SCL follows USB...............on  A) Aux follows USB..............off
-  p) Show PTR progress.............on
+  p) Show PTR progress.............on  u) Uppercase mode...............off
   -----
   ESC) Return to terminal mode
 
@@ -437,6 +438,12 @@ Whenever the PDP-11 request a character from the virtual paper tape reader, the 
 **On** enables displaying the progress bar in all contexts, while **Off** disables it entirely.
 
 **USB only** causes the progress bar to be displayed only when the user is interacting with the Console Adapter over USB (i.e. when not interacting via auxiliary terminal). This mode can be useful when the AUX port is configured to use a slow bit rate that interferes with the smooth animation of the bar.
+
+### Enabling/Disabling Uppercase Mode
+
+The Console Adapter can be placed in a mode where all characters forwarded to the SCL port in Terminal Mode are converted to uppercase first.  This mode is useful when working with PDP-11 software, such as PDP-11 Paper Tape BASIC, which requires the user to enter uppercase characters only.  It is more convenient than using the keyboard’s caps lock key in that only characters sent to the PDP-11 are converted, and the keyboard remains in non-caps lock mode while interacting with the Console Adapter’s menus or other programs on the host computer.
+
+Uppercase mode can be toggled on or off by selecting the **Uppercase mode** option in the Settings Menu  (key sequence: `CTRL+^ S u`).
 
 ## Adapter Status
 
