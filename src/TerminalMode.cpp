@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <ctype.h>
+
 #include "ConsoleAdapter.h"
 #include "Settings.h"
 #include "PTRProgressBar.h"
@@ -55,8 +57,14 @@ void TerminalMode(void)
                 MenuMode(*uiPort);
             }
 
-            // Otherwise forward the character to the SCL port.
+            // Otherwise forward the character to the SCL port...
             else {
+
+                // Convert character to uppercase if in Uppercase Mode
+                if (Settings::UppercaseMode) {
+                    ch = toupper(ch);
+                }
+
                 gSCLPort.Write(ch);
             }
 

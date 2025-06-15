@@ -405,6 +405,7 @@ void SettingsMenu(Port& uiPort)
     static char sSCLConfigFollowsUSBValue[30];
     static char sAuxConfigFollowsHostValue[30];
     static char sShowPTRProgressValue[30];
+    static char sUppercaseModeValue[30];
 
     static const MenuItem sMenuItems[] = {
         { 's', "Default SCL config", sSCLConfigValue            },
@@ -412,6 +413,7 @@ void SettingsMenu(Port& uiPort)
         { 'p', "Show PTR progress",  sShowPTRProgressValue      },
         { 'a', "Default AUX config", sAuxConfigValue            },
         { 'A', "AUX follows USB",    sAuxConfigFollowsHostValue },
+        { 'u', "Uppercase mode",     sUppercaseModeValue        },
         MenuItem::SEPARATOR(),
         { '\e', "Return to terminal mode"                       },
         MenuItem::HIDDEN(CTRL_C),
@@ -433,6 +435,7 @@ void SettingsMenu(Port& uiPort)
         ToString(Settings::SCLConfigFollowsUSB, sSCLConfigFollowsUSBValue, sizeof(sSCLConfigFollowsUSBValue));
         ToString(Settings::AuxConfigFollowsUSB, sAuxConfigFollowsHostValue, sizeof(sAuxConfigFollowsHostValue));
         ToString(Settings::ShowPTRProgress, sShowPTRProgressValue, sizeof(sShowPTRProgressValue));
+        ToString(Settings::UppercaseMode, sUppercaseModeValue, sizeof(sUppercaseModeValue));
 
         sMenu.Show(uiPort);
 
@@ -461,6 +464,9 @@ void SettingsMenu(Port& uiPort)
             if (!GetShowPTRProgress(uiPort, Settings::ShowPTRProgress)) {
                 continue;
             }
+            break;
+        case 'u':
+            Settings::UppercaseMode = !Settings::UppercaseMode;
             break;
         default:
             return;

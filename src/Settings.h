@@ -34,6 +34,7 @@ public:
         ShowPTRProgress_Disabled
     };
     static ShowPTRProgress_t ShowPTRProgress;
+    static bool UppercaseMode;
 
     static void Init(void);
     static void Save(void);
@@ -42,7 +43,7 @@ public:
     static void PrintStats(Port& uiPort);
 
 private:
-    static const SettingsRecord * sLatestRec;
+    static const SettingsRecord * sActiveRec;
     static uint32_t sEraseCount;
 
     static const SettingsRecord * FindEmptyRecord(bool& eraseSector);

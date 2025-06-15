@@ -53,7 +53,20 @@ struct alignas(uint64_t) SettingsRecord_V1 final : public SettingsRecord
     static constexpr uint32_t VERSION = 1;
 };
 
-typedef struct SettingsRecord_V1 SettingsRecord_Latest;
+struct alignas(uint64_t) SettingsRecord_V2 final : public SettingsRecord
+{
+    SerialConfig SCLConfig;
+    bool SCLConfigFollowsUSB;
+    SerialConfig AuxConfig;
+    bool AuxConfigFollowsUSB;
+    uint32_t ShowPTRProgress;
+    uint32_t UppercaseMode;
+    uint32_t CheckSum;
+
+    static constexpr uint32_t VERSION = 2;
+};
+
+typedef struct SettingsRecord_V2 SettingsRecord_Latest;
 
 SerialConfig Settings::SCLConfig = { SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
 bool Settings::SCLConfigFollowsUSB = true;
@@ -63,7 +76,9 @@ bool Settings::AuxConfigFollowsUSB;
 
 Settings::ShowPTRProgress_t Settings::ShowPTRProgress = Settings::ShowPTRProgress_Enabled;
 
-const SettingsRecord * Settings::sLatestRec;
+bool Settings::UppercaseMode;
+
+const SettingsRecord * Settings::sActiveRec;
 uint32_t Settings::sEraseCount;
 
 // Start and end of adapter settings storage area in flash.
@@ -85,7 +100,7 @@ static inline const uint8_t * GetFlashPage(const void * ptr)
 
 void Settings::Init(void)
 {
-    sLatestRec = NULL;
+    sActiveRec = NULL;
 
     // Scan each flash sector looking for the (active, valid and supported) settings
     // record with the latest (i.e. highest) data revision.
@@ -94,24 +109,32 @@ void Settings::Init(void)
             if (rec->IsValid() &&
                 rec->Marker == SettingsRecord::ACTIVE_MARKER &&
                 IsSupportedRecord(rec->RecordVersion)) {
-                if (sLatestRec == NULL || rec->DataRevision >= sLatestRec->DataRevision) {
-                    sLatestRec = rec;
+                if (sActiveRec == NULL || rec->DataRevision >= sActiveRec->DataRevision) {
+                    sActiveRec = rec;
                 }
             }
         }
     }
 
-    // If a latest settings record was found, extract its contents
-    if (sLatestRec != NULL) {
-        switch (sLatestRec->RecordVersion) {
-        case SettingsRecord_V1::VERSION:
-            auto recV1 = (const SettingsRecord_V1 *)sLatestRec;
+    // If an active settings record was found, extract its contents
+    if (sActiveRec != NULL) {
+        if (sActiveRec->RecordVersion == SettingsRecord_V1::VERSION) {
+            auto recV1 = (const SettingsRecord_V1 *)sActiveRec;
             SCLConfig = recV1->SCLConfig;
             SCLConfigFollowsUSB = recV1->SCLConfigFollowsUSB;
             AuxConfig = recV1->AuxConfig;
             AuxConfigFollowsUSB = recV1->AuxConfigFollowsUSB;
             ShowPTRProgress  = (ShowPTRProgress_t)recV1->ShowPTRProgress;
-            break;
+            UppercaseMode = false;
+        }
+        else if (sActiveRec->RecordVersion == SettingsRecord_V2::VERSION) {
+            auto recV2 = (const SettingsRecord_V2 *)sActiveRec;
+            SCLConfig = recV2->SCLConfig;
+            SCLConfigFollowsUSB = recV2->SCLConfigFollowsUSB;
+            AuxConfig = recV2->AuxConfig;
+            AuxConfigFollowsUSB = recV2->AuxConfigFollowsUSB;
+            ShowPTRProgress  = (ShowPTRProgress_t)recV2->ShowPTRProgress;
+            UppercaseMode = (recV2->UppercaseMode != 0);
         }
     }
 }
@@ -120,7 +143,7 @@ void Settings::Save(void)
 {
     // Determine the data revision number to be stored in the new
     // settings record
-    uint32_t nextDataRev = (sLatestRec != NULL) ? sLatestRec->DataRevision + 1 : 1;
+    uint32_t nextDataRev = (sActiveRec != NULL) ? sActiveRec->DataRevision + 1 : 1;
 
     // Build a local copy of the data to be stored in the new settings
     // record.
@@ -134,6 +157,7 @@ void Settings::Save(void)
     newRecData.AuxConfig = AuxConfig;
     newRecData.AuxConfigFollowsUSB = AuxConfigFollowsUSB;
     newRecData.ShowPTRProgress = (uint8_t)ShowPTRProgress;
+    newRecData.UppercaseMode = UppercaseMode;
     newRecData.CheckSum = newRecData.ComputeCheckSum();
 
     // Find the place in flash at which the new settings record should
@@ -184,7 +208,7 @@ void Settings::Save(void)
     restore_interrupts(intState);
 
     // Keep track of the most recently written settings record.
-    sLatestRec = newRec;
+    sActiveRec = newRec;
 }
 
 const SettingsRecord * Settings::FindEmptyRecord(bool& eraseSector)
@@ -193,8 +217,8 @@ const SettingsRecord * Settings::FindEmptyRecord(bool& eraseSector)
 
     // Search for empty space to store a new record within the same flash sector
     // as the most recently record written. Use that space if found.
-    if (sLatestRec != NULL) {
-        for (auto newRec = sLatestRec->NextInSector();
+    if (sActiveRec != NULL) {
+        for (auto newRec = sActiveRec->NextInSector();
              newRec != NULL && newRec->IsValid();
              newRec = newRec->NextInSector()) {
             if (newRec->Marker == SettingsRecord::EMPTY_MARKER) {
@@ -206,8 +230,8 @@ const SettingsRecord * Settings::FindEmptyRecord(bool& eraseSector)
     // If no room in the current sector, arrange to write the record in the next
     // logical sector.
     const uint8_t * newSector;
-    if (sLatestRec != NULL) {
-        newSector = GetFlashSector(sLatestRec) + FLASH_SECTOR_SIZE;
+    if (sActiveRec != NULL) {
+        newSector = GetFlashSector(sActiveRec) + FLASH_SECTOR_SIZE;
         if (newSector >= &__SettingsStorageEnd) {
             newSector = &__SettingsStorageStart;
         }
@@ -230,7 +254,8 @@ const SettingsRecord * Settings::FindEmptyRecord(bool& eraseSector)
 
 bool Settings::IsSupportedRecord(uint16_t recVer)
 {
-    return (recVer == SettingsRecord_V1::VERSION);
+    return (recVer == SettingsRecord_V1::VERSION ||
+            recVer == SettingsRecord_V2::VERSION);
 }
 
 void Settings::PrintStats(Port& uiPort)
@@ -239,42 +264,51 @@ void Settings::PrintStats(Port& uiPort)
 
     uiPort.Printf(
         TITLE_PREFIX "SETTINGS STATS:\r\n"
-        "  Storage Area Start: 0x%08x\r\n"
-        "  Storage Area End: 0x%08x\r\n"
-        "  Storage Area Size: %u (%u sectors)\r\n"
-        "  Settings Record Size: %u\r\n"
-        "  Sector Erase Count: %u\r\n",
+        "  Storage area start: 0x%08x\r\n"
+        "  Storage area end: 0x%08x\r\n"
+        "  Storage area size: %u (%u sectors)\r\n"
+        "  Latest SettingsRecord version: %u\r\n"
+        "  Latest SettingsRecord size: %u\r\n"
+        "  Sector erase count since boot: %u\r\n",
         (uintptr_t)&__SettingsStorageStart,
         (uintptr_t)&__SettingsStorageEnd,
         storageSize, storageSize / FLASH_SECTOR_SIZE,
+        SettingsRecord_Latest::VERSION,
         sizeof(SettingsRecord_Latest),
         sEraseCount
     );
-    if (sLatestRec != NULL) {
+    if (sActiveRec != NULL) {
         size_t curSector = 
-            (size_t)(GetFlashSector(sLatestRec) - &__SettingsStorageStart) / FLASH_SECTOR_SIZE;
+            (size_t)(GetFlashSector(sActiveRec) - &__SettingsStorageStart) / FLASH_SECTOR_SIZE;
         size_t offset =
-            (size_t)(((const uint8_t *)sLatestRec) - GetFlashSector(sLatestRec));
+            (size_t)(((const uint8_t *)sActiveRec) - GetFlashSector(sActiveRec));
         size_t remainingSpace =
-            (size_t)((GetFlashSector(sLatestRec) + FLASH_SECTOR_SIZE) - 
-                ((const uint8_t *)sLatestRec + sLatestRec->GetSize()));
+            (size_t)((GetFlashSector(sActiveRec) + FLASH_SECTOR_SIZE) - 
+                ((const uint8_t *)sActiveRec + sActiveRec->GetSize()));
         uiPort.Printf(
-            "  Latest flash sector: %zu\r\n"
-            "  Latest record offset in sector: %zu\r\n"
-            "  Remaining space in latest sector: %zu\r\n"
-            "  Latest Data Revision: %" PRIu32 "\r\n",
+            "  Active record flash sector: %zu\r\n"
+            "  Active record offset in sector: %zu\r\n"
+            "  Remaining space in active record sector: %zu\r\n"
+            "  Active record version: %" PRIu32 "\r\n"
+            "  Active record size: %" PRIu32 "\r\n"
+            "  Active record data revision: %" PRIu32 "\r\n",
             curSector,
             offset,
             remainingSpace,
-            sLatestRec->DataRevision
+            sActiveRec->RecordVersion,
+            sActiveRec->RecordSize,
+            sActiveRec->DataRevision
         );
     }
     else {
         uiPort.Write(
-            "  Latest Data Revision: (n/a)\r\n"
-            "  Latest flash sector: (n/a)\r\n"
-            "  Latest record offset in sector: (n/a)\r\n"
-            "  Remaining space in latest sector: (n/a)\r\n");
+            "  Active record flash sector: (n/a)\r\n"
+            "  Active record offset in sector: (n/a)\r\n"
+            "  Remaining space in active record sector: (n/a)\r\n"
+            "  Active record version: (n/a)\r\n"
+            "  Active record size: (n/a)\r\n"
+            "  Active record data revision: (n/a)\r\n"
+        );
     }
 }
 
@@ -310,17 +344,19 @@ bool SettingsRecord::IsValid(void) const
     // If the record is marked active...
     if (Marker == ACTIVE_MARKER) {
 
-        // Verify that the record revision and size are correct
-        switch (RecordVersion) {
-        case 0:
+        // Verify that the record version and size are correct
+        if (RecordVersion == 0) {
             return false;
-        case SettingsRecord_V1::VERSION:
+        }
+        else if (RecordVersion == SettingsRecord_V1::VERSION) {
             if (RecordSize != sizeof(SettingsRecord_V1)) {
                 return false;
             }
-            break;
-        default:
-            break;
+        }
+        else if (RecordVersion == SettingsRecord_V2::VERSION) {
+            if (RecordSize != sizeof(SettingsRecord_V2)) {
+                return false;
+            }
         }
 
         // Verify that the full record does not overlap the end of the sector
@@ -330,14 +366,15 @@ bool SettingsRecord::IsValid(void) const
         }
 
         // Verify the checksum value
-        switch (RecordVersion) {
-        case SettingsRecord_V1::VERSION:
+        if (RecordVersion == SettingsRecord_V1::VERSION) {
             if (((const SettingsRecord_V1 *)this)->CheckSum != ComputeCheckSum()) {
                 return false;
             }
-            break;
-        default:
-            break;
+        }
+        else if (RecordVersion == SettingsRecord_V2::VERSION) {
+            if (((const SettingsRecord_V2 *)this)->CheckSum != ComputeCheckSum()) {
+                return false;
+            }
         }
     }
 
@@ -395,6 +432,11 @@ uint32_t SettingsRecord::ComputeCheckSum(void) const
             auto recV1 = (const SettingsRecord_V1 *)this;
             return crc32((const uint8_t *)recV1,
                          ((const uint8_t *)&recV1->CheckSum) - (const uint8_t *)recV1);
+        }
+        else if (RecordVersion == SettingsRecord_V2::VERSION) {
+            auto recV2 = (const SettingsRecord_V2 *)this;
+            return crc32((const uint8_t *)recV2,
+                         ((const uint8_t *)&recV2->CheckSum) - (const uint8_t *)recV2);
         }
     }
     return UINT32_MAX;
