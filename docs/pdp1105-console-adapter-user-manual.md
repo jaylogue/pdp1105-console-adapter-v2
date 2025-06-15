@@ -219,12 +219,12 @@ To mount a paper tape image, choose the **Mount paper tape** option from the Mai
 
 ```
 *** MOUNT PAPER TAPE:
-0) PDP-11 BASIC                3) XXDP D1AA ADDRESS TEST UP
-1) CONSOLE ECHO TEST           4) XXDP DZQKC INSTRUCT EXERCISER
-2) SIMPLE MEMORY TEST          5) TU58 BOOTSTRAP
------
-A) Absolute Loader             P) Previously uploaded file
-X) Upload file via XMODEM      ESC) Return to terminal mode
+  0) PDP-11 BASIC                3) XXDP D1AA ADDRESS TEST UP
+  1) CONSOLE ECHO TEST           4) XXDP DZQKC INSTRUCT EXERCISER
+  2) SIMPLE MEMORY TEST          5) TU58 BOOTSTRAP
+  -----
+  A) Absolute Loader             P) Previously uploaded file
+  X) Upload file via XMODEM      ESC) Return to terminal mode
 
 >>> 
 ```
@@ -265,13 +265,13 @@ To load an Absolute Loader (LDA) file, select the **Load file using M93xx consol
 
 ```
 *** LOAD FILE:
-0) PDP-11 BASIC                3) XXDP D1AA ADDRESS TEST UP
-1) CONSOLE ECHO TEST           4) XXDP DZQKC INSTRUCT EXERCISER
-2) SIMPLE MEMORY TEST          5) TU58 BOOTSTRAP
------
-A) Absolute Loader             P) Previously uploaded file
-B) Bootstrap Loader            ESC) Return to terminal mode
-X) Upload file via XMODEM
+  0) PDP-11 BASIC                3) XXDP D1AA ADDRESS TEST UP
+  1) CONSOLE ECHO TEST           4) XXDP DZQKC INSTRUCT EXERCISER
+  2) SIMPLE MEMORY TEST          5) TU58 BOOTSTRAP
+  -----
+  A) Absolute Loader             P) Previously uploaded file
+  B) Bootstrap Loader            ESC) Return to terminal mode
+  X) Upload file via XMODEM
 
 >>> 
 ```
@@ -288,13 +288,13 @@ Loading a simple (non-LDA) data file is similar to loading an LDA file. Select t
 
 ```
 *** LOAD FILE:
-0) PDP-11 BASIC                3) XXDP D1AA ADDRESS TEST UP
-1) CONSOLE ECHO TEST           4) XXDP DZQKC INSTRUCT EXERCISER
-2) SIMPLE MEMORY TEST          5) TU58 BOOTSTRAP
------
-A) Absolute Loader             P) Previously uploaded file
-B) Bootstrap Loader            ESC) Return to terminal mode
-X) Upload file via XMODEM
+  0) PDP-11 BASIC                3) XXDP D1AA ADDRESS TEST UP
+  1) CONSOLE ECHO TEST           4) XXDP DZQKC INSTRUCT EXERCISER
+  2) SIMPLE MEMORY TEST          5) TU58 BOOTSTRAP
+  -----
+  A) Absolute Loader             P) Previously uploaded file
+  B) Bootstrap Loader            ESC) Return to terminal mode
+  X) Upload file via XMODEM
 
 >>> 
 ```
@@ -369,11 +369,11 @@ The Console Adapter provides a number of options for controlling its behavior. T
 
 ```
 *** SETTINGS MENU:
-s) Default SCL config....9600-8-N-1    a) Default Aux config....9600-8-N-1
-S) SCL follows USB..........off        A) Aux follows USB..........off
-p) Show PTR progress........on
------
-ESC) Return to terminal mode
+  s) Default SCL config....9600-8-N-1  a) Default Aux config....9600-8-N-1
+  S) SCL follows USB...............on  A) Aux follows USB..............off
+  p) Show PTR progress.............on
+  -----
+  ESC) Return to terminal mode
 
 >>> 
 ```
@@ -400,13 +400,13 @@ The default configuration can be changed by selecting the **Default SCL config**
 
 ```
 *** CHANGE SCL PORT CONFIG:
-0) 110    3) 1200   6) 9600
-1) 300    4) 2400   7) 19200
-2) 600    5) 4800   8) 38400
------
-a) 8-N-1  b) 7-E-1  c) 7-O-1
------
-ENTER) Accept    ESC) Abort
+  0) 110    3) 1200   6) 9600
+  1) 300    4) 2400   7) 19200
+  2) 600    5) 4800   8) 38400
+  -----
+  a) 8-N-1  b) 7-E-1  c) 7-O-1
+  -----
+  ENTER) Accept    ESC) Abort
 
 >>> 9600-8-N-1
 ```
@@ -427,9 +427,9 @@ Whenever the PDP-11 request a character from the virtual paper tape reader, the 
 
 ```
 *** SHOW PAPER TAPE READER PROGRESS BAR:
-0) On
-1) USB only
-2) Off
+  0) On
+  1) USB only
+  2) Off
 
 >>> 
 ```
@@ -444,10 +444,10 @@ The current status of the Console Adapter can be view by selecting the **Adapter
 
 ```
 *** ADAPTER STATUS:
-SCL Port: 9600-8-N-1 (default), connected
-Aux Port: 9600-8-N-1 (default)
-Paper Tape Reader: PDP-11 BASIC (AJPB-PB)
-Position: 9300/10170 (91%)
+  SCL Port: 9600-8-N-1 (default), connected
+  Aux Port: 9600-8-N-1 (default)
+  Paper Tape Reader: PDP-11 BASIC (AJPB-PB)
+  Position: 9300/10170 (91%)
 ```
 
 For both the SCL and AUX ports, the display shows the currently active serial configuration and an indication of how this configuration was arrived at. The word **default** is shown if the port configuration was set based on the defaults given in the Adapter Settings menu. The words **set via USB** are shown if the port configuration was set via a serial configuration change request received over USB.
