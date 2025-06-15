@@ -87,6 +87,8 @@ The SCP port on the PDP-11/05 predates modern connector standards. As such, it l
 
 _**CAUTION**: The lack of the registration key on the SCL connector means that it is possible to connect the SCL cable to the PDP-11 in the wrong orientation. Therefore, **be especially careful to orient the SCL cable correctly when connecting it to the PDP-11**.  In particular, SCL cable connector should be positioned such that **pin 1 is towards to the right-hand side of the PDP-11** when looking at the system from behind. On most ribbon cables, pin 1 can be identified by the presence of a small triangle on one side of the connector, or by the red stripe on one edge of the ribbon cable._
 
+<img src="media/pdp1105-console-adapter-scl-orientation.jpg" width="512"/>
+
 ### Connecting to a USB Host Computer
 
 The primary means of interacting with the Console Adapter is via a USB connection to a host computer. This requires a cable with a micro USB connector on one end and either a USB A or USB C connector on the other end.
