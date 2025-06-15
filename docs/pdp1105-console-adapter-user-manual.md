@@ -33,6 +33,7 @@
 - [Flash File Library](#flash-file-library)
   - [Creating a File Library Image](#creating-a-file-library-image)
   - [Flashing a New File Library](#flashing-a-new-file-library)
+- [Copyright](#copyright)
 
 ---
 
@@ -506,3 +507,9 @@ Once a new file library image has been created, the process to flash the library
 - When the Pico virtual drive appears on the host computer (look for a drive named "RPI-RP2"), drag or copy the library image file (.uf2 file) onto the drive.
 - After a moment, the virtual drive will disappear and the Console Adapter will reboot.
 - Once the device finishes rebooting, the new file library is available for use.
+
+# Copyright
+
+Copyright 2025 Jay Logue
+
+All documentation for the PDP-11/05 Console Adapter V2, including images, schematics, PCB designs and this manual, are licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
