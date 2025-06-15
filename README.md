@@ -113,7 +113,7 @@ The following diagram shows the schematic for the PDP-11/05 Console USB Adapter:
 
 <img src="docs/media/pdp1105-console-adapter-schematic.png" width="1024"/>
 
-A PDF version of the schematic is available [here](pcb/pdp1105-console-adapter-v2-schematic.pdf).
+A PDF version of the schematic is available [here](docs/pdp1105-console-adapter-schematic.pdf).
 
 Note that the Console Adapter schematic uses modern pin numbering for the console IDC connector (J1), rather than the archaic DEC letter-based scheme. For a table showing the relationship between the two numbering schemes, see the following PDF: [pdp1105-scl-connector.pdf](docs/pdp1105-scl-connector.pdf).
 
