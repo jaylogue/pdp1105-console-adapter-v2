@@ -16,7 +16,9 @@ This version of the PDP-11/05 Console Adapter project (version 2) is based on th
 
 ### Project Status
 
-**2025/04/28** - Significant progress has been made on the PDP-11/05 Console Adapter design and implementation. The schematic and PCB designs have been finalized and boards have been built and partially assembled. The firmware is functionally complete, but may undergo some further UI tweaks as documentation is developed. User documentation is underway, as are the designs for a set of 3D-printed enclosures.
+**2025/06/16** - The first major release of PDP-11/05 Console Adapter is ready. The schematic and PCB designs are complete and final hardware has been built. The firmware is feature complete and tested, and user documentation has been written. Unfortunately, the design of 3D-printed enclosures has hit a snag, so it’s unclear when these will be available.
+
+Assembled hardware is available for those with real PDP-11/05 or /10 systems.  Please reach out to me at jay DOT logue AT gmail DOT com for inquiries.
 
 <hr>
 
