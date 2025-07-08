@@ -37,11 +37,6 @@ bool PaperTapeReader::TryRead(char& ch)
         // Read the next character from the tape
         ch = (char)sData[sStartOffset + sReadPos];
         sReadPos++;
-        
-        // Automatically unmount the tape when the end is reached
-        if (sReadPos == sLength) {
-            Unmount();
-        }
 
         return true;
     }

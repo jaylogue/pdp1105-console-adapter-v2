@@ -53,7 +53,11 @@ void TerminalMode(void)
 
             // If the menu key was pressed enter menu mode
             if (ch == MENU_KEY) {
+
+                // Remove the paper tape progress bar so that it doesn't interfere
+                // with with the menu mode output
                 PTRProgressBar::Clear();
+
                 MenuMode(*uiPort);
             }
 
@@ -73,7 +77,16 @@ void TerminalMode(void)
 
         // Forward characters received from the SCL port to both the Host and Aux ports
         if (gSCLPort.TryRead(ch)) {
+
+            // Automatically unmount the paper tape reader if at the end
+            if (PaperTapeReader::TapePosition() == PaperTapeReader::TapeLength()) {
+                PaperTapeReader::Unmount();
+            }
+
+            // Remove the paper tape progress bar so that it doesn't interfere
+            // with output from the PDP-11
             PTRProgressBar::Clear();
+
             WriteHostAuxPorts(ch);
         }
 
