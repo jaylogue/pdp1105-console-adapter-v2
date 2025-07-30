@@ -1,6 +1,6 @@
 ﻿# PDP-11/05 Console Adapter
 
-<img src="docs/media/pdp1105-console-adapter-v2-3.jpg" width="1024"/>
+<img src="docs/media/pdp1105-console-adapter-v2-5.jpg" width="1024"/>
 
 The *PDP-11/05 Console Adapter* is a hardware device which acts as a USB and RS-232 serial interface to the console of a [PDP-11/05](http://gunkies.org/wiki/PDP-11/05) minicomputer. The Console Adapter provides a number of useful features for working with the PDP-11/05:
 
@@ -14,11 +14,11 @@ The *PDP-11/05 Console Adapter* is a hardware device which acts as a USB and RS-
 
 This version of the PDP-11/05 Console Adapter project (version 2) is based on the ubiquitous [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/) microcontroller. An earlier version based on the Teensy 3.2 microcontroller can be found [here](https://github.com/jaylogue/pdp-1105-console-usb-adapter).
 
-### Project Status
+### Project Status (2025/07/29)
 
-**2025/06/16** - The first major release of PDP-11/05 Console Adapter is ready. The schematic and PCB designs are complete and final hardware has been built. The firmware is feature complete and tested, and user documentation has been written. Unfortunately, the design of 3D-printed enclosures has hit a snag, so it’s unclear when these will be available.
+The first major release of PDP-11/05 Console Adapter is ready. The schematic and PCB designs are finished and final hardware has been built. The firmware is feature complete and tested, and user documentation has been written. Two different 3D-printed enclosures have been designed and built, and the design files for these are available for download.
 
-Assembled hardware is available for those with real PDP-11/05 or /10 systems.  Please reach out to me at jay DOT logue AT gmail DOT com for inquiries.
+I am happy to make assembled hardware or kits available for those enthusiasts who own real PDP-11/05 or /10 systems.  Please reach out to me at jay DOT logue AT gmail DOT com for details.
 
 <hr>
 
@@ -35,6 +35,7 @@ Assembled hardware is available for those with real PDP-11/05 or /10 systems.  P
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[XMODEM File Upload](#xmodem-file-upload)**<br>
 **[Schematic](#schematic)**<br>
 **[PCB Design Files](#pcb-design-files)**<br>
+**[3D Printable Cases](#3d-printable-cases)**<br>
 **[User Documentation](#user-documentation)**<br>
 **[License](#license)**<br>
 
@@ -119,9 +120,27 @@ A PDF version of the schematic is available [here](docs/pdp1105-console-adapter-
 
 Note that the Console Adapter schematic uses modern pin numbering for the console IDC connector (J1), rather than the archaic DEC letter-based scheme. For a table showing the relationship between the two numbering schemes, see the following PDF: [pdp1105-scl-connector.pdf](docs/pdp1105-scl-connector.pdf).
 
-## KiCad Design Files
+## PCB Design Files
 
 A KiCad project containing the schematic and a layout file for a two-layer PCB is available in the [pcb](pcb) folder.
+
+## 3D Printable Cases
+
+<img src="docs/media/pdp1105-console-adapter-cases.jpg" width="512"/>
+
+The [case](case) folder contains model and design files for a set of 3d-printable cases for the console adapter.  Two cases styles are provided: a **standalone case** and a **direct attach case**. Each style consists of a bottom 'base' piece and a top 'cover' piece. The lettering visible on the case is embossed into the top piece. A separate design file is included which allows this lettering to be filled with a different colors on printers that support swapping filaments.
+
+<img src="docs/media/pdp1105-console-adapter-standalone-case-01.jpg" width="512"/>
+
+The standalone case allows the console adapters to be connected to the PDP-11/05 using a ribbon cable. A hole on the side of the case accommodates a right-angle 40-pin male IDC connector, which is mounted on the top of the PCB. The two halves of the standalone case snap together, holding the PCB in place.
+
+<img src="docs/media/pdp1105-console-adapter-direct-attach-case-01.jpg" width="512"/>
+
+The direct attach case has a hole on the bottom of the case through which a female 40-pin connector protrudes. The connector is soldered to the bottom of the PCB, and extends from the back of the case far enough to allow the adapter to plug directly into the PDP's SCL port. A flange with a screw hole allows the case to be anchored to the back of the system using an existing case screw.
+
+The direct attach case is held together with two small screws which pass through the PCB.
+
+<img src="docs/media/pdp1105-console-adapter-direct-attach-case-02.jpg" width="512"/>
 
 ## User Documentation
 
@@ -131,4 +150,5 @@ A User Manual for the PDP-11/05 Console Adapter is available [here](docs/pdp1105
 
 The PDP-11/05 Console Adapter source code is licensed under the [Apache version 2.0 license](https://www.apache.org/licenses/LICENSE-2.0).
 
-All documentation, including images, schematics, PCB designs and this README, are licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
+Other content, including all documentation, images, schematics, PCB and case designs, and this README file are licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
+
