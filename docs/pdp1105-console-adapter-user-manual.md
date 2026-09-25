@@ -12,7 +12,7 @@
   - [Performing a Loop-back Test](#performing-a-loop-back-test)
   - [Updating the Console Adapter Firmware](#updating-the-console-adapter-firmware)
 - [Basic Operation](#basic-operation)
-  - [Terminal mode](#terminal-mode)
+  - [Terminal Mode](#terminal-mode)
   - [Menu Mode](#menu-mode)
 - [Virtual Paper Tape Reader](#virtual-paper-tape-reader)
   - [Mounting a Paper Tape Image](#mounting-a-paper-tape-image)
@@ -41,7 +41,7 @@
 
 <img src="media/pdp1105-console-adapter-v2-4.jpg" width="1024"/>
 
-The PDP-11/05 Console Adapter is a serial interface adapter for the console of a [PDP-11/05](http://gunkies.org/wiki/PDP-11/05) minicomputer. It connects to the PDP-11’s Serial Communication Line (SCL) port and makes it possible to communicate with the system over USB, using a terminal program running on a host computer. It also supports connecting a traditional RS-232 terminal.
+The PDP-11/05 Console Adapter is a serial interface adapter for the console of a [PDP-11/05](http://gunkies.org/wiki/PDP-11/05) minicomputer. It connects to the PDP-11's Serial Communication Line (SCL) port and makes it possible to communicate with the system over USB, using a terminal program running on a host computer. It also supports connecting a traditional RS-232 terminal.
 
 ## Hardware Overview
 
@@ -53,8 +53,8 @@ The Console Adapter hardware consists of a Raspberry Pi Pico microcontroller, a 
 
 The Console Adapter has 3 primary interfaces:
 
-- **USB Port**: A female micro-USB connector for connecting to a host computer (located on the Pico micocontroller PCB).
-- **SCL Port**: A 40pin IDC connector for connecting to the PDP-11/05's SCL port.
+- **USB port**: A female micro-USB connector for connecting to a host computer (located on the Pico microcontroller PCB).
+- **SCL port**: A 40-pin IDC connector for connecting to the PDP-11/05's SCL port.
 - **AUX port**: A female DE-9 connector for connecting an auxiliary RS-232 terminal.
 
 Use of either the USB or AUX ports is optional.
@@ -66,7 +66,7 @@ Use of either the USB or AUX ports is optional.
 The PDP-11/05 Console Adapter has three LEDs that show the status and activity of the system:
 
 - **Power/Activity LED**: Lit while the system is powered. Flashes briefly whenever there is activity in the Console Adapter.
-- **TX and RX LEDs**: Normally off. Flashes on whenever characters are transmitted/received by the PDP-11.
+- **TX and RX LEDs**: Normally off. Flash on whenever characters are transmitted/received by the PDP-11.
 
 Additionally, the Pico's onboard LED mimics the behavior of the Power/Activity LED.
 
@@ -82,19 +82,19 @@ _**CAUTION**: The Console Adapter is not internally isolated. As a consequence, 
 
 ### Connecting the Console Adapter to a PDP-11/05
 
-The Console Adapter must be connected to the PDP-11/05 using a 40-pin ribbon cable with 2x20 pin IDC connectors at each end. Generally speaking, this cable should be as short as possible, for signal integrity reasons. However cables up to 6'/2m will probably work fine.
+The Console Adapter must be connected to the PDP-11/05 using a 40-pin ribbon cable with 2x20 pin IDC connectors at each end. Generally speaking, this cable should be as short as possible, for signal integrity reasons. However, cables up to 6'/2m will probably work fine.
 
 The SCP port on the PDP-11/05 predates modern connector standards. As such, it lacks the slot needed to accept the square registration "key" present on most modern ribbon cable connectors. Because of this, it is necessary to file off the registration key on one connector when making an SCL cable out of modern components.
 
-_**CAUTION**: The lack of the registration key on the SCL connector means that it is possible to connect the SCL cable to the PDP-11 in the wrong orientation. Therefore, **be especially careful to orient the SCL cable correctly when connecting it to the PDP-11**.  In particular, SCL cable connector should be positioned such that **pin 1 is towards to the right-hand side of the PDP-11** when looking at the system from behind. On most ribbon cables, pin 1 can be identified by the presence of a small triangle on one side of the connector, or by the red stripe on one edge of the ribbon cable._
+_**CAUTION**: The lack of the registration key on the SCL connector means that it is possible to connect the SCL cable to the PDP-11 in the wrong orientation. Therefore, **be especially careful to orient the SCL cable correctly when connecting it to the PDP-11**. In particular, the SCL cable connector should be positioned such that **pin 1 is towards the right-hand side of the PDP-11** when looking at the system from behind. On most ribbon cables, pin 1 can be identified by the presence of a small triangle on one side of the connector, or by the red stripe on one edge of the ribbon cable._
 
 <img src="media/pdp1105-console-adapter-scl-orientation.jpg" width="512"/>
 
 ### Connecting to a USB Host Computer
 
-The primary means of interacting with the Console Adapter is via a USB connection to a host computer. This requires a cable with a micro USB connector on one end and either a USB A or USB C connector on the other end.
+The primary means of interacting with the Console Adapter is via a USB connection to a host computer. This requires a cable with a micro-USB connector on one end and either a USB A or USB C connector on the other end.
 
-When connected via USB the Console Adapter appears as a virtual COM device on the host computer. To connect a terminal emulator to the COM device one must know the OS-specific device name, which varies depending what other devices are connected to the computer.
+When connected via USB the Console Adapter appears as a virtual COM device on the host computer. To connect a terminal emulator to the COM device one must know the OS-specific device name, which varies depending on what other devices are connected to the computer.
 
 The following commands can be used to find the device name of the Console Adapter device:
 
@@ -145,7 +145,7 @@ _**CAUTION**: An early revision of the Console Adapter PCB (rev 4.1) contains an
 
 <img src="media/pdp1105-console-adapter-loopback-test.jpg" width="512"/>
 
-To validate the functionality of the Console Adapter a simple loopback test can be performed while the adapter is disconnected from the PDP-11. This requires the use of a short jumper wire with a female pin connectors (sometimes called DuPont or Berg connectors) on each end.
+To validate the functionality of the Console Adapter a simple loopback test can be performed while the adapter is disconnected from the PDP-11. This requires the use of a short jumper wire with female pin connectors (sometimes called DuPont or Berg connectors) on each end.
 
 - With the Console Adapter disconnected from the PDP-11, connect together **pin 4 and pin 36** on the SCL port connector.
 - Plug the adapter into a host computer via USB.
@@ -160,8 +160,8 @@ The Console Adapter firmware can be updated by following the standard procedure 
 - Start with the Console Adapter in a powered-off state by powering off the PDP-11 (if attached) and disconnecting the USB connection to the host computer.
 - While holding down the BOOTSEL button on the Pico, plug in the USB cable to the host computer.
 - When the Pico virtual drive appears on the host computer (look for a drive named "RPI-RP2"), drag or copy the firmware image file (typically pdp1105-console-adapter.uf2) onto the drive.
-- After a moment, the virtual drive will disappear and the Console Adapter will reboot
-- Once the device finishes booting, the new firmware is installed and ready for use
+- After a moment, the virtual drive will disappear and the Console Adapter will reboot.
+- Once the device finishes booting, the new firmware is installed and ready for use.
 
 Note that it is also possible to update the Console Adapter firmware using the Raspberry Pi [picotool](https://github.com/raspberrypi/picotool) command-line tool. This approach can be more convenient in that it does not require pressing the BOOTSEL button. Prebuilt binaries for the picotool command are available online at the [Pico SDK Tools](https://github.com/raspberrypi/pico-sdk-tools) github page.
 
@@ -176,13 +176,13 @@ To update the Console Adapter firmware using the picotool command, perform the f
 
 ## Basic Operation
 
-### Terminal mode
+### Terminal Mode
 
-Upon boot, the Console Adapter automatically enters **Terminal Mode**. In Terminal Mode, the adapter continuously relays characters between USB port and PDP-11's SCL port: any characters input by the user via a terminal program on the host are sent to the PDP-11, and any characters output by the PDP-11 are displayed in the terminal program.
+Upon boot, the Console Adapter automatically enters **Terminal Mode**. In Terminal Mode, the adapter continuously relays characters between the USB port and the PDP-11's SCL port: any characters input by the user via a terminal program on the host are sent to the PDP-11, and any characters output by the PDP-11 are displayed in the terminal program.
 
 If an auxiliary terminal is connected to the AUX port, the adapter will also relay characters between the auxiliary terminal and the PDP-11. The USB and AUX ports can both be used simultaneously, and any characters output by the PDP-11 will be shown on both.
 
-By default, most characters are relayed without modification between the USB and AUX ports and the PDP-11's SCL port.  An exception to this is the control key which used to invoke Menu Mode (see below).  Additionally, a special mode can be enabled that forces all characters sent to the PDP-11 to be uppercase (see [Enabling/Disabling Uppercase Mode](#enablingdisabling-uppercase-mode)).
+By default, most characters are relayed without modification between the USB and AUX ports and the PDP-11's SCL port. An exception to this is the control key which is used to invoke Menu Mode (see below). Additionally, a special mode can be enabled that forces all characters sent to the PDP-11 to be uppercase (see [Enabling/Disabling Uppercase Mode](#enablingdisabling-uppercase-mode)).
 
 ### Menu Mode
 
@@ -203,7 +203,7 @@ To enter Menu Mode from Terminal Mode press the menu key: `CTRL+^` (Control Shif
 
 While in Menu Mode, requests for user input are indicated by a `>>>` prompt. Menu choices are made by pressing the single (case sensitive) key shown before each menu option.
 
-In most contexts, pressing `ESC` or `CTRL+C` will will exit menu mode and return the adapter to Terminal Mode.
+In most contexts, pressing `ESC` or `CTRL+C` will exit Menu Mode and return the adapter to Terminal Mode.
 
 Pressing `CTRL+^` from the Main Menu will send the menu key character to the PDP-11.
 
@@ -211,7 +211,7 @@ Menu Mode can be entered from either the USB port or the AUX port. The menu UI o
 
 ## Virtual Paper Tape Reader
 
-Console Adapter can emulate a low-speed paper tape reader attached to the PDP-11/05 console. Paper tape image files can be "mounted" on the virtual paper tape reader such that they are available to be read by the PDP-11. Each time the PDP-11 signals to advance the paper tape (via the READER RUN signal) the Console Adapter sends a single byte from the paper tape file to the SCL port. As the paper tape is read, an animated progress bar is displayed showing the logical position of the tape in the reader. When the entirety of the image has been read, the virtual paper tape is automatically unmounted.
+The Console Adapter can emulate a low-speed paper tape reader attached to the PDP-11/05 console. Paper tape image files can be "mounted" on the virtual paper tape reader such that they are available to be read by the PDP-11. Each time the PDP-11 signals to advance the paper tape (via the READER RUN signal) the Console Adapter sends a single byte from the paper tape file to the SCL port. As the paper tape is read, an animated progress bar is displayed showing the logical position of the tape in the reader. When the entirety of the image has been read, the virtual paper tape is automatically unmounted.
 
 The virtual paper tape reader can mount image files that have been stored in the adapter's flash File Library. It is also possible to mount image files that have been uploaded using the XMODEM protocol and stored in RAM.
 
@@ -219,7 +219,7 @@ Note that the mount status of the virtual paper tape reader, and the logical pos
 
 ### Mounting a Paper Tape Image
 
-To mount a paper tape image, choose the **Mount paper tape** option from the Main Menu (key sequence: `CTRL+^ m`). This will show Mount Paper Tape menu:
+To mount a paper tape image, choose the **Mount paper tape** option from the Main Menu (key sequence: `CTRL+^ m`). This will show the Mount Paper Tape menu:
 
 ```
 *** MOUNT PAPER TAPE:
@@ -257,7 +257,7 @@ To view the status of the paper tape reader choose the **Adapter status** option
 
 ## M9312/M9301 Console Loader
 
-If the PDP-11 contains a [M9312](https://gunkies.org/wiki/M9312_ROM) or [M9301](https://gunkies.org/wiki/M9301_ROM) Bootstrap Terminator module, the Console Adapter can load programs or other data directly into the memory of the PDP-11/05 using the UI provided by the module’s console ROM.
+If the PDP-11 contains a [M9312](https://gunkies.org/wiki/M9312_ROM) or [M9301](https://gunkies.org/wiki/M9301_ROM) Bootstrap Terminator module, the Console Adapter can load programs or other data directly into the memory of the PDP-11/05 using the UI provided by the module's console ROM.
 
 The Console Loader feature works by issuing a series of Load Address (L) and Deposit (D) commands to the console and monitoring the responses. The Console Adapter automatically detects data files in Absolute Loader (LDA) format and arranges to load their contents at the correct memory offsets.
 
@@ -265,7 +265,7 @@ The Console Adapter includes special support for loading the PDP-11 Bootstrap Lo
 
 ### Loading Absolute Loader (LDA) Files
 
-To load an Absolute Loader (LDA) file, select the **Load file using M93xx console** option from the Main Menu (key sequence: `CTRL+^ l`). This will show Load File menu:
+To load an Absolute Loader (LDA) file, select the **Load file using M93xx console** option from the Main Menu (key sequence: `CTRL+^ l`). This will show the Load File menu:
 
 ```
 *** LOAD FILE:
@@ -282,13 +282,13 @@ To load an Absolute Loader (LDA) file, select the **Load file using M93xx consol
 
 Once a file has been selected, the Console Adapter will inspect the file to determine if it is in Absolute Loader (LDA) format. If it is, the adapter will use the addressing information encoded in the file to store the file's contents into the correct locations in memory.
 
-If the file contains a program start address, the start address will be loaded into console using the 'L' command as the final step of the loading process. This makes it convenient to start the program by entering an 'S' command.
+If the file contains a program start address, the start address will be loaded into the console using the 'L' command as the final step of the loading process. This makes it convenient to start the program by entering an 'S' command.
 
 Once the load operation has completed, the Console Adapter returns to Terminal Mode.
 
 ### Loading Simple Data Files
 
-Loading a simple (non-LDA) data file is similar to loading an LDA file. Select the **Load file using M93xx console** option from the Main Menu (key sequence: `CTRL+^ l`), which will show Load File menu:
+Loading a simple (non-LDA) data file is similar to loading an LDA file. Select the **Load file using M93xx console** option from the Main Menu (key sequence: `CTRL+^ l`), which will show the Load File menu:
 
 ```
 *** LOAD FILE:
@@ -315,7 +315,7 @@ Once an address has been entered, the Console Adapter will load the contents of 
 
 ### Loading the Bootstrap Loader
 
-The Console Adapter provides a special option for loading the [PDP-11 Bootstrap Loader](https://gunkies.org/wiki/PDP-11_Bootstrap_Loader) via the M9312 / M9301 console ROM. This feature can be used to avoid the need to toggle the loader into the system using the console switches.
+The Console Adapter provides a special option for loading the [PDP-11 Bootstrap Loader](https://gunkies.org/wiki/PDP-11_Bootstrap_Loader) via the M9312/M9301 console ROM. This feature can be used to avoid the need to toggle the loader into the system using the console switches.
 
 To load the Bootstrap Loader, select the **Load file using M93xx console** option from the Main Menu and choose the **Bootstrap Loader** option (key sequence: `CTRL+^ l B`).
 
@@ -327,7 +327,7 @@ The Console Adapter will then prompt for the system memory size:
 
 Enter the system memory size in KW, using decimal notation. Pressing ENTER without entering a size will select the default memory size, as shown in the input field.
 
-Per the DEC instructions for using the Bootstrap Loader, the selected memory size determines the address at which the loader is loaded, as shown in the follow table:
+Per the DEC instructions for using the Bootstrap Loader, the selected memory size determines the address at which the loader is loaded, as shown in the following table:
 
 | System Memory Size | Bootstrap Location |
 |:-----:|:-----:|
@@ -341,19 +341,19 @@ Per the DEC instructions for using the Bootstrap Loader, the selected memory siz
 
 Once a memory size has been entered, the Console Adapter proceeds to load the Bootstrap Loader at the given memory location. As it does so, it automatically adjusts the contents of the loader for operation at the target memory location, as described in the associated DEC documentation.
 
-As the final step of loading, the Console Adapter loads the start address of the Bootstrap Loader into console using the 'L' command, allowing the user to start the loader using the 'S' command.
+As the final step of loading, the Console Adapter loads the start address of the Bootstrap Loader into the console using the 'L' command, allowing the user to start the loader using the 'S' command.
 
 Note that, by design, the Bootstrap Loader expects to read the Absolute Loader from the system's tape reader. Therefore it is best to mount the Absolute Loader tape image prior to starting the Bootstrap Loader.
 
 By default, the Bootstrap Loader is configured to read data from a low-speed paper tape reader attached to the PDP-11/05's SCL port (which in this context is the Console Adapter itself). This can be changed by modifying the paper tape reader CSR address stored in the last word of the Bootstrap Loader. See [here](https://gunkies.org/wiki/PDP-11_Bootstrap_Loader) or the associated DEC documentation for how to do this.
 
-Note that, while traditionally, the Bootstrap Loader is used as the first step in loading programs via paper tape, with the Console Adapter, this step can be skipped by loading the Absolute Loader directly, as described in the following section.
+Note that, while traditionally the Bootstrap Loader is used as the first step in loading programs via paper tape, with the Console Adapter this step can be skipped by loading the Absolute Loader directly, as described in the following section.
 
 ### Loading the Absolute Loader
 
-The Console Adapter provides the ability to load the PDP-11 Absolute Loader directly into memory using the M9312 / M9301 console.  This makes it possible to bypass the step of entering and running the Bootstrap Loader. Technically, when operated this way, the Console Adapter loads both Absolute Loader and the Bootstrap Loader in one step. This ensures that system memory is arranged the same as if the Boot Loader had been loaded as a separate step.
+The Console Adapter provides the ability to load the PDP-11 Absolute Loader directly into memory using the M9312/M9301 console. This makes it possible to bypass the step of entering and running the Bootstrap Loader. Technically, when operated this way, the Console Adapter loads both the Absolute Loader and the Bootstrap Loader in one step. This ensures that system memory is arranged the same as if the Bootstrap Loader had been loaded as a separate step.
 
-To load the Absolute Loader directly, select the **Absolute Loader** option from the Load File Menu (key sequence: `CTRL+^ l A`). Once selected, the Console Adapter will prompt for the system memory size:
+To load the Absolute Loader directly, select the **Absolute Loader** option from the Load File menu (key sequence: `CTRL+^ l A`). Once selected, the Console Adapter will prompt for the system memory size:
 
 ```
 >>> INPUT SYSTEM MEMORY SIZE (in KW): 28
@@ -361,7 +361,7 @@ To load the Absolute Loader directly, select the **Absolute Loader** option from
 
 Enter the system memory size in KW, using decimal notation. Pressing ENTER without entering a size will select the default memory size, as shown in the input field.
 
-As with loading the Bootstrap Loader, the selected memory size determines the address at which the absolute loader is loaded (see the section on Loading the Bootstrap Loader for details).
+As with loading the Bootstrap Loader, the selected memory size determines the address at which the Absolute Loader is loaded (see the section on Loading the Bootstrap Loader for details).
 
 As the final step of loading, the Console Adapter loads the start address of the Absolute Loader into the console using the 'L' command. This allows the user to start the loader using the 'S' command.
 
@@ -386,13 +386,13 @@ Changes made to settings via the settings menu are persisted in the adapter's fl
 
 ### Changing the SCL Port Configuration
 
-The console adapter includes a baud clock generator which allows it to dynamically adjust the speed of the PDP-11/05's SCL port. While in Terminal Mode, the adapter listens for requests from the attached USB host to change the serial configuration. These requests are known as *CDC Line Coding Requests* in USB parlance. Most terminal emulator programs, such as PuTTY or minicom, provide a way to send serial configuration requests using a key sequence: or menu option.
+The Console Adapter includes a baud clock generator which allows it to dynamically adjust the speed of the PDP-11/05's SCL port. While in Terminal Mode, the adapter listens for requests from the attached USB host to change the serial configuration. These requests are known as *CDC Line Coding Requests* in USB parlance. Most terminal emulator programs, such as PuTTY or minicom, provide a way to send serial configuration requests using a key sequence or menu option.
 
-When the adapter receives a serial configuration change request, it automatically adjusts the SCL port to match the requested configuration, provided the request is for a configuration supported by the PDP-11/05. The console adapter supports all standard serial bit rates in the range 110 to 38400 (which is effectively the range supported by the PDP-11/05 UART hardware). Serial bit formats are limited to 8-N-1, 7-E-1 and 7-O-1, as these are the only ones that may be used on the PDP-11/05.
+When the adapter receives a serial configuration change request, it automatically adjusts the SCL port to match the requested configuration, provided the request is for a configuration supported by the PDP-11/05. The Console Adapter supports all standard serial bit rates in the range 110 to 38400 (which is effectively the range supported by the PDP-11/05 UART hardware). Serial bit formats are limited to 8-N-1, 7-E-1 and 7-O-1, as these are the only ones that may be used on the PDP-11/05.
 
 Note that most terminal emulators will issue a request to change the serial configuration as soon as they connect to a USB COM device. The effect of this is that the SCL port's configuration will snap to whatever configuration is the default for the terminal emulator at the time it is started.
 
-By default, the console adapter is pre-configured to listen and react to serial change requests from the USB host. This feature can be disabled by changing the **SCL follows USB** setting to **off** in the **Settings Menu** (key sequence: `CTRL+^ S S`). When this setting is off, the adapter will always use the default SCL port configuration set in the Settings Menu (see below).
+By default, the Console Adapter is pre-configured to listen and react to serial change requests from the USB host. This feature can be disabled by changing the **SCL follows USB** setting to **off** in the **Settings Menu** (key sequence: `CTRL+^ S S`). When this setting is off, the adapter will always use the default SCL port configuration set in the Settings Menu (see below).
 
 ### Default SCL Port Configuration
 
@@ -419,7 +419,7 @@ The current serial configuration is shown after the prompt. Selecting the variou
 
 ### Changing the AUX Port Configuration
 
-When the Console Adapter boots, it configures the AUX port using a set of default settings stored in persistent memory. These settings can be changed by choosing the **Default AUX config** option from via the adapter's Settings Menu (key sequence: `CTRL+^ S a`).
+When the Console Adapter boots, it configures the AUX port using a set of default settings stored in persistent memory. These settings can be changed by choosing the **Default AUX config** option via the adapter's Settings Menu (key sequence: `CTRL+^ S a`).
 
 The AUX port configuration is preset to 9600-8-N-1.
 
@@ -427,7 +427,7 @@ Similar to the SCL port, the AUX port can be configured to automatically adjust 
 
 ### Controlling the Paper Tape Progress Bar
 
-Whenever the PDP-11 request a character from the virtual paper tape reader, the Console Adapter shows an animated progress bar depicting the logical position of the paper. This animation can be controlled by selecting the **Show PTR progress** option in the Settings Menu (key sequence: `CTRL+^ S p`). Three modes are available:
+Whenever the PDP-11 requests a character from the virtual paper tape reader, the Console Adapter shows an animated progress bar depicting the logical position of the tape. This animation can be controlled by selecting the **Show PTR progress** option in the Settings Menu (key sequence: `CTRL+^ S p`). Three modes are available:
 
 ```
 *** SHOW PAPER TAPE READER PROGRESS BAR:
@@ -440,17 +440,17 @@ Whenever the PDP-11 request a character from the virtual paper tape reader, the 
 
 **On** enables displaying the progress bar in all contexts, while **Off** disables it entirely.
 
-**USB only** causes the progress bar to be displayed only when the user is interacting with the Console Adapter over USB (i.e. when not interacting via auxiliary terminal). This mode can be useful when the AUX port is configured to use a slow bit rate that interferes with the smooth animation of the bar.
+**USB only** causes the progress bar to be displayed only when the user is interacting with the Console Adapter over USB (i.e. when not interacting via an auxiliary terminal). This mode can be useful when the AUX port is configured to use a slow bit rate that interferes with the smooth animation of the bar.
 
 ### Enabling/Disabling Uppercase Mode
 
-The Console Adapter can be placed in a mode where all characters forwarded to the SCL port in Terminal Mode are converted to uppercase first.  This mode is useful when working with PDP-11 software, such as PDP-11 Paper Tape BASIC, which requires the user to enter uppercase characters only.  It is more convenient than using the keyboard’s caps lock key in that only characters sent to the PDP-11 are converted, and the keyboard remains in non-caps lock mode while interacting with the Console Adapter’s menus or other programs on the host computer.
+The Console Adapter can be placed in a mode where all characters forwarded to the SCL port in Terminal Mode are converted to uppercase first. This mode is useful when working with PDP-11 software, such as PDP-11 Paper Tape BASIC, which requires the user to enter uppercase characters only. It is more convenient than using the keyboard's caps lock key in that only characters sent to the PDP-11 are converted, and the keyboard remains in non-caps lock mode while interacting with the Console Adapter's menus or other programs on the host computer.
 
-Uppercase mode can be toggled on or off by selecting the **Uppercase mode** option in the Settings Menu  (key sequence: `CTRL+^ S u`).
+Uppercase mode can be toggled on or off by selecting the **Uppercase mode** option in the Settings Menu (key sequence: `CTRL+^ S u`).
 
 ## Adapter Status
 
-The current status of the Console Adapter can be view by selecting the **Adapter status** option from the Main menu (key sequence: `CTRL+^ S S`). The adapter status feature displays the current state of the SCL and AUX ports, as well as the virtual paper tape reader.
+The current status of the Console Adapter can be viewed by selecting the **Adapter status** option from the Main Menu (key sequence: `CTRL+^ s`). The adapter status feature displays the current state of the SCL and AUX ports, as well as the virtual paper tape reader.
 
 ```
 *** ADAPTER STATUS:
@@ -468,7 +468,7 @@ For the virtual paper tape reader, the adapter will show the name of the current
 
 ## Flash File Library
 
-The Console Adapter provides the ability to store frequently used paper tape images and other data files on the Console Adapter itself, such that they are readily available for use when working with the PDP-11. Files are stored in the Pico's flash memory along side the adapter's firmware, and thus are preserved across reboots. The files in the file library appear as choices in the Mount Paper Tape and Load File menus.
+The Console Adapter provides the ability to store frequently used paper tape images and other data files on the Console Adapter itself, such that they are readily available for use when working with the PDP-11. Files are stored in the Pico's flash memory alongside the adapter's firmware, and thus are preserved across reboots. The files in the file library appear as choices in the Mount Paper Tape and Load File menus.
 
 Each file in the library can be up to 128KiB in size. The library itself can contain a maximum of 36 files totaling up to 1MiB in size.
 
@@ -478,7 +478,7 @@ File names are limited to 32 characters.
 
 To update the file library on the Console Adapter, one must first create a **file library image**. A file library image is a [UF2](https://github.com/microsoft/uf2) file that contains the contents of all the files in the library along with associated metadata (file names, sizes and checksums). Being a UF2 file, the library image file can be written directly to the Pico's flash memory using the standard Pico flash procedure (see below).
 
-The `mkfilelib.py` command-line tool can be used construct a new file library image. The tool takes the name of the image file to be created, followed by a list of files to be included in the image:
+The `mkfilelib.py` command-line tool can be used to construct a new file library image. The tool takes the name of the image file to be created, followed by a list of files to be included in the image:
 
 ```bash
 ./tools/mkfilelib.py my-file-lib.uf2 paper-tape/DEC-11-AJPB-PB.ptap paper-tape/DEC-11-ASPA-PB.ptap
@@ -508,7 +508,7 @@ Once a new file library image has been created, the process to flash the library
 - After a moment, the virtual drive will disappear and the Console Adapter will reboot.
 - Once the device finishes rebooting, the new file library is available for use.
 
-# Copyright
+## Copyright
 
 Copyright 2025 Jay Logue
 

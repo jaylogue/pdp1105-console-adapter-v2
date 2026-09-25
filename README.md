@@ -10,15 +10,15 @@ The *PDP-11/05 Console Adapter* is a hardware device which acts as a USB and RS-
 - **External baud clock generator, allowing console data rates greater than 2400bps**
 - **Dynamically adjustable serial data rate and format (110 to 38400 bps, 8-N-1, 7-E-1, 7-O-1)**
 - **Virtual paper tape reader compatible with the 11/05's READER RUN signal**
-- **M9301/M9312 console loader that can directly load data into the PDP-11's memory using console commands**
+- **M9312/M9301 console loader that can directly load data into the PDP-11's memory using console commands**
 
 This version of the PDP-11/05 Console Adapter project (version 2) is based on the ubiquitous [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/) microcontroller. An earlier version based on the Teensy 3.2 microcontroller can be found [here](https://github.com/jaylogue/pdp-1105-console-usb-adapter).
 
 ### Project Status (2025/07/29)
 
-The first major release of PDP-11/05 Console Adapter is ready. The schematic and PCB designs are finished and final hardware has been built. The firmware is feature complete and tested, and user documentation has been written. Two different 3D-printed enclosures have been designed and built, and the design files for these are available for download.
+The first major release of the PDP-11/05 Console Adapter is ready. The schematic and PCB designs are finished and final hardware has been built. The firmware is feature complete and tested, and user documentation has been written. Two different 3D-printed enclosures have been designed and built, and the design files for these are available for download.
 
-I am happy to make assembled hardware or kits available for those enthusiasts who own real PDP-11/05 or /10 systems.  Please reach out to me at jay DOT logue AT gmail DOT com for details.
+I am happy to make assembled hardware or kits available to those enthusiasts who own real PDP-11/05 or /10 systems. Please reach out to me at jay DOT logue AT gmail DOT com for details.
 
 <hr>
 
@@ -30,7 +30,7 @@ I am happy to make assembled hardware or kits available for those enthusiasts wh
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[Status LEDs](#status-leds)**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[Power Source](#power-source)**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[Virtual Paper Tape Reader](#virtual-paper-tape-reader)**<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[M9301/M9312 Console Loader](#m9301m9312-console-loader)**<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[M9312/M9301 Console Loader](#m9312m9301-console-loader)**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[On-device File Library](#on-device-file-library)**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**[XMODEM File Upload](#xmodem-file-upload)**<br>
 **[Schematic](#schematic)**<br>
@@ -51,7 +51,7 @@ The Console Adapter supports standard serial data rates in the range accepted by
 
 The PDP-11/05 CPU includes a clock generator circuit which is used to generate the 16X clock signal needed to drive the internal console UART chip. Due to its simplicity, the internal generator limits the maximum usable data rate to 2400 bps. Conveniently, the PDP-11/05 provides a way to override the internal generator by providing an external clock signal on the SCL port. This allows the console to run at substantially higher data rates (theoretically up to 40000 bps).
 
-To enable higher data rates, the Console Adapter employs a PWM on the Pico to generate the necessary clock signal to drive the PDP’s UART. The frequency of this clock signal is automatically adjusted to match the data rate of the Pico's UART, ensuring that the two systems are always in sync.
+To enable higher data rates, the Console Adapter employs a PWM on the Pico to generate the necessary clock signal to drive the PDP's UART. The frequency of this clock signal is automatically adjusted to match the data rate of the Pico's UART, ensuring that the two systems are always in sync.
 
 ### Auxiliary Terminal Interface
 
@@ -74,7 +74,7 @@ The choice to dynamically adjust the serial configuration based on a request fro
 The PDP-11/05 Console Adapter has three status LEDs:
 
 - **Power/Activity LED**: Lit while the system is powered. Flashes briefly whenever there is activity in the Console Adapter.
-- **TX and RX LEDs**: Normally off. Flashes on whenever characters are transmitted/received by the PDP-11.
+- **TX and RX LEDs**: Normally off. Flash on whenever characters are transmitted/received by the PDP-11.
 
 Additionally, the Pico's onboard LED mimics the behavior of the Power/Activity LED.
 
@@ -82,7 +82,7 @@ Additionally, the Pico's onboard LED mimics the behavior of the Power/Activity L
 
 The Console Adapter operates on +5 volts, which it can receive either from the PDP-11/05 itself or via the USB port. Because the Console Adapter can get its power directly from the PDP, it is possible to use the Console Adapter with only an auxiliary terminal connected.
 
-Both power sources can be active at the same time, and the USB port can be connected or disconnected on the fly. (However **_do not_** hot plug/unplug the Console Adapter to the 11/05's SCL port, as it is not designed to support this).
+Both power sources can be active at the same time, and the USB port can be connected or disconnected on the fly. (However, **_do not_** hot plug/unplug the Console Adapter to the 11/05's SCL port, as it is not designed to support this.)
 
 ### Virtual Paper Tape Reader
 
@@ -90,9 +90,9 @@ The PDP-11/05 SCL port includes a signal called "READER RUN" which is designed t
 
 Users can mount paper tape images on the virtual paper tape reader using the Console Adapter's menu system (accessed by typing a special _menu_ key on the console). While the tape reader is active, a visual progress bar is displayed showing how much of the tape image has been read. Virtual tapes are unmounted automatically when the end of the tape is reached, or can be unmounted manually via the UI.
 
-### M9301/M9312 Console Loader
+### M9312/M9301 Console Loader
 
-On systems equipped with an M9301 or M9312 Bootstrap Module, the PDP-11/05 Console Adapter can be used to load data files directly into the PDP's memory using the UI provided by the bootstrap module's console ROM. Data is loaded by issuing a series of Load Address (L) and Deposit (D) commands and monitoring the responses received from the console. The loader automatically detects data files in Absolute Loader (LDA) format and arranges to load their contents at the correct memory offsets.
+On systems equipped with an M9312 or M9301 Bootstrap Module, the PDP-11/05 Console Adapter can be used to load data files directly into the PDP's memory using the UI provided by the bootstrap module's console ROM. Data is loaded by issuing a series of Load Address (L) and Deposit (D) commands and monitoring the responses received from the console. The loader automatically detects data files in Absolute Loader (LDA) format and arranges to load their contents at the correct memory offsets.
 
 The loader includes special support for loading the PDP-11 Bootstrap Loader (the code for which is built into the Console Adapter firmware). When requested to load the Bootstrap Loader, the Console Adapter will prompt the user for the memory size of the machine and adjust the software's load address and instruction contents automatically, following the rules described in the associated DEC documentation.
 
@@ -100,7 +100,7 @@ A similar feature is available for loading the Absolute Loader, which allows for
 
 ### On-device File Library
 
-The Console Adapter supports the ability to load frequently used paper tape images and other types of data files into the Pico's flash memory such that they are readily available for use when working with the PDP-11. A python-based command line tool is provided that gathers a set of data files into a .uf2 file which then can be written to flash using one of the standard Pico firmware update processes (e.g. by dragging it onto the Pico's virtual disk). Once programmed in flash, files in the library are available for mounting on the virtual paper tape reader, or loading directly into memory using the M9301/M9312 console loader feature.
+The Console Adapter supports the ability to load frequently used paper tape images and other types of data files into the Pico's flash memory such that they are readily available for use when working with the PDP-11. A Python-based command line tool is provided that gathers a set of data files into a .uf2 file which then can be written to flash using one of the standard Pico firmware update processes (e.g. by dragging it onto the Pico's virtual disk). Once programmed in flash, files in the library are available for mounting on the virtual paper tape reader, or loading directly into memory using the M9312/M9301 console loader feature.
 
 1MiB of flash memory is available for file storage. Up to 36 files may be stored in this memory, with each file limited to a maximum of 128KiB.
 
@@ -112,7 +112,7 @@ Uploaded files are stored in RAM on the Console Adapter and are limited to 64KiB
 
 ## Schematic
 
-The following diagram shows the schematic for the PDP-11/05 Console USB Adapter:
+The following diagram shows the schematic for the PDP-11/05 Console Adapter:
 
 <img src="docs/media/pdp1105-console-adapter-schematic.png" width="1024"/>
 
@@ -128,11 +128,11 @@ A KiCad project containing the schematic and a layout file for a two-layer PCB i
 
 <img src="docs/media/pdp1105-console-adapter-cases.jpg" width="512"/>
 
-The [case](case) folder contains model and design files for a set of 3d-printable cases for the console adapter.  Two cases styles are provided: a **standalone case** and a **direct attach case**. Each style consists of a bottom 'base' piece and a top 'cover' piece. The lettering visible on the case is embossed into the top piece. A separate design file is included which allows this lettering to be filled with a different colors on printers that support swapping filaments.
+The [case](case) folder contains model and design files for a set of 3D-printable cases for the Console Adapter. Two case styles are provided: a **standalone case** and a **direct attach case**. Each style consists of a bottom 'base' piece and a top 'cover' piece. The lettering visible on the case is embossed into the top piece. A separate design file is included which allows this lettering to be filled with a different color on printers that support swapping filaments.
 
 <img src="docs/media/pdp1105-console-adapter-standalone-case-01.jpg" width="512"/>
 
-The standalone case allows the console adapters to be connected to the PDP-11/05 using a ribbon cable. A hole on the side of the case accommodates a right-angle 40-pin male IDC connector, which is mounted on the top of the PCB. The two halves of the standalone case snap together, holding the PCB in place.
+The standalone case allows the Console Adapter to be connected to the PDP-11/05 using a ribbon cable. A hole on the side of the case accommodates a right-angle 40-pin male IDC connector, which is mounted on the top of the PCB. The two halves of the standalone case snap together, holding the PCB in place.
 
 <img src="docs/media/pdp1105-console-adapter-direct-attach-case-01.jpg" width="512"/>
 
@@ -150,5 +150,4 @@ A User Manual for the PDP-11/05 Console Adapter is available [here](docs/pdp1105
 
 The PDP-11/05 Console Adapter source code is licensed under the [Apache version 2.0 license](https://www.apache.org/licenses/LICENSE-2.0).
 
-Other content, including all documentation, images, schematics, PCB and case designs, and this README file are licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
-
+Other content, including all documentation, images, schematics, PCB and case designs, and this README file, is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
