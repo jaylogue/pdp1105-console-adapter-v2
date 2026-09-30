@@ -44,7 +44,7 @@ static void SettingsMenu(Port& uiPort);
 static void DiagMenu(Port& uiPort);
 static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
 static bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal = UINT32_MAX);
-static bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig);
+static bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig, bool sclPort = false);
 static bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressBar);
 static const char * ToString(const SerialConfig& serialConfig, char * buf, size_t bufSize);
 static const char * ToString(bool val, char * buf, size_t bufSize);
@@ -441,7 +441,7 @@ void SettingsMenu(Port& uiPort)
 
         switch (sMenu.GetSelection(uiPort)) {
         case 's':
-            if (!GetSerialConfig(uiPort, "CHANGE SCL PORT CONFIG:", Settings::SCLConfig)) {
+            if (!GetSerialConfig(uiPort, "CHANGE SCL PORT CONFIG:", Settings::SCLConfig, true)) {
                 continue;
             }
             reconfigPorts = true;
@@ -451,7 +451,7 @@ void SettingsMenu(Port& uiPort)
             reconfigPorts = true;
             break;
         case 'a':
-            if (!GetSerialConfig(uiPort, "CHANGE AUX PORT CONFIG:", Settings::AuxConfig)) {
+            if (!GetSerialConfig(uiPort, "CHANGE AUX PORT CONFIG:", Settings::AuxConfig, false)) {
                 continue;
             }
             reconfigPorts = true;
@@ -604,9 +604,9 @@ bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal)
     }
 }
 
-bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig)
+bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig, bool sclPort)
 {
-    static const MenuItem sMenuItems[] = {
+    static const MenuItem sFullMenuItems[] = {
         { '0', "110"   },
         { '1', "300"   },
         { '2', "600"   },
@@ -618,8 +618,31 @@ bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfi
         { '8', "38400" },
         MenuItem::SEPARATOR(),
         { 'a', "8-N-1" },
-        { 'b', "7-E-1" },
-        { 'c', "7-O-1" },
+        { 'b', "8-N-2" },
+        { 'c', "7-E-1" },
+        { 'd', "7-E-2" },
+        { 'e', "7-O-1" },
+        { 'f', "7-O-2" },
+        MenuItem::SEPARATOR(),
+        { '\r', "Accept"        },
+        { '\e', "Abort"        },
+        MenuItem::HIDDEN(CTRL_C),
+        MenuItem::END()
+    };
+    static const MenuItem sSCLMenuItems[] = {
+        { '0', "110"   },
+        { '1', "300"   },
+        { '2', "600"   },
+        { '3', "1200"  },
+        { '4', "2400"  },
+        { '5', "4800"  },
+        { '6', "9600"  },
+        { '7', "19200" },
+        { '8', "38400" },
+        MenuItem::SEPARATOR(),
+        { 'a', "8-N-2" },
+        { 'b', "7-E-2" },
+        { 'c', "7-O-2" },
         MenuItem::SEPARATOR(),
         { '\r', "Accept"        },
         { '\e', "Abort"        },
@@ -632,7 +655,7 @@ bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfi
     char serialConfigBuf[12];
     Menu menu = {
         .Title = title,
-        .Items = sMenuItems,
+        .Items = (sclPort) ? sSCLMenuItems : sFullMenuItems,
         .NumCols = 3,
         .ColWidth = -1,
         .ColMargin = 2
@@ -642,32 +665,53 @@ bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfi
     constexpr auto PARITY_ODD  = SerialConfig::PARITY_ODD;
     constexpr auto PARITY_EVEN = SerialConfig::PARITY_EVEN;
 
-    newSerialConfig.StopBits = 1; // only one choice
-
     menu.Show(uiPort);
 
     while (true) {
         snprintf(promptBuf, sizeof(promptBuf), "\r" INPUT_PROMPT "%s  \r" INPUT_PROMPT,
             ToString(newSerialConfig, serialConfigBuf, sizeof(serialConfigBuf)));
 
-        switch (menu.GetSelection(uiPort, promptBuf, false, false)) {
-        case '0': newSerialConfig.BitRate = 110;   break;
-        case '1': newSerialConfig.BitRate = 300;   break;
-        case '2': newSerialConfig.BitRate = 600;   break;
-        case '3': newSerialConfig.BitRate = 1200;  break;
-        case '4': newSerialConfig.BitRate = 2400;  break;
-        case '5': newSerialConfig.BitRate = 4800;  break;
-        case '6': newSerialConfig.BitRate = 9600;  break;
-        case '7': newSerialConfig.BitRate = 19200; break;
-        case '8': newSerialConfig.BitRate = 38400; break;
-        case 'a': newSerialConfig.DataBits = 8; newSerialConfig.Parity = PARITY_NONE; break;
-        case 'b': newSerialConfig.DataBits = 7; newSerialConfig.Parity = PARITY_EVEN; break;
-        case 'c': newSerialConfig.DataBits = 7; newSerialConfig.Parity = PARITY_ODD;  break;
-        case '\r':
+        char selection = menu.GetSelection(uiPort, promptBuf, false, false);
+        
+        switch (selection) {
+        case '0': newSerialConfig.BitRate = 110;   continue;
+        case '1': newSerialConfig.BitRate = 300;   continue;
+        case '2': newSerialConfig.BitRate = 600;   continue;
+        case '3': newSerialConfig.BitRate = 1200;  continue;
+        case '4': newSerialConfig.BitRate = 2400;  continue;
+        case '5': newSerialConfig.BitRate = 4800;  continue;
+        case '6': newSerialConfig.BitRate = 9600;  continue;
+        case '7': newSerialConfig.BitRate = 19200; continue;
+        case '8': newSerialConfig.BitRate = 38400; continue;
+        default: break;
+        }
+
+        if (sclPort) {
+            switch (selection) {
+            case 'a': newSerialConfig.DataBits = 8; newSerialConfig.Parity = PARITY_NONE; newSerialConfig.StopBits = 2; continue;
+            case 'b': newSerialConfig.DataBits = 7; newSerialConfig.Parity = PARITY_EVEN; newSerialConfig.StopBits = 2; continue;
+            case 'c': newSerialConfig.DataBits = 7; newSerialConfig.Parity = PARITY_ODD;  newSerialConfig.StopBits = 2; continue;
+            default: break;
+            }
+        }
+        else {
+            switch (selection) {
+            case 'a': newSerialConfig.DataBits = 8; newSerialConfig.Parity = PARITY_NONE; newSerialConfig.StopBits = 1; continue;
+            case 'b': newSerialConfig.DataBits = 8; newSerialConfig.Parity = PARITY_NONE; newSerialConfig.StopBits = 2; continue;
+            case 'c': newSerialConfig.DataBits = 7; newSerialConfig.Parity = PARITY_EVEN; newSerialConfig.StopBits = 1; continue;
+            case 'd': newSerialConfig.DataBits = 7; newSerialConfig.Parity = PARITY_EVEN; newSerialConfig.StopBits = 2; continue;
+            case 'e': newSerialConfig.DataBits = 7; newSerialConfig.Parity = PARITY_ODD;  newSerialConfig.StopBits = 1; continue;
+            case 'f': newSerialConfig.DataBits = 7; newSerialConfig.Parity = PARITY_ODD;  newSerialConfig.StopBits = 2; continue;
+            default: break;
+            }
+        }
+
+        if (selection == '\r'){
             serialConfig = newSerialConfig;
             uiPort.Write("\r\n");
             return true;
-        default:
+        }
+        else {
             uiPort.Write("\r\n");
             return false;
         }

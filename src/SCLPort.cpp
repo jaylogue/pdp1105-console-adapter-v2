@@ -22,7 +22,7 @@
 
 SCLPort gSCLPort;
 
-SerialConfig SCLPort::sConfig = { SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
+SerialConfig SCLPort::sConfig = { SCL_DEFAULT_BAUD_RATE, 8, 2, SerialConfig::PARITY_NONE };
 bool SCLPort::sReaderRunRequested;
 
 void SCLPort::Init(void)
@@ -78,14 +78,19 @@ void SCLPort::SetConfig(const SerialConfig& serialConfig)
     // Wait for the UART transmission queue to empty.
     Flush();
 
+    // Accept the new configuration.
+    sConfig = serialConfig;
+
+    // The SCL port on the PDP11/05 is hard-wired to use 2 stop bits, so
+    // force the use of 2 stop bits here.
+    sConfig.StopBits = 2;
+
     // Set the baud rate and format for the SCL UART
     uart_set_baudrate(SCL_UART, serialConfig.BitRate);
     uart_set_format(SCL_UART, serialConfig.DataBits, serialConfig.StopBits, (uart_parity_t)serialConfig.Parity);
 
     // The SCL clock based on the new serial configuration.
     ConfigSCLClock(serialConfig.BitRate);
-
-    sConfig = serialConfig;
 }
 
 bool SCLPort::CheckConnected(void)

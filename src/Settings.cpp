@@ -68,7 +68,7 @@ struct alignas(uint64_t) SettingsRecord_V2 final : public SettingsRecord
 
 typedef struct SettingsRecord_V2 SettingsRecord_Latest;
 
-SerialConfig Settings::SCLConfig = { SCL_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
+SerialConfig Settings::SCLConfig = { SCL_DEFAULT_BAUD_RATE, 8, 2, SerialConfig::PARITY_NONE };
 bool Settings::SCLConfigFollowsUSB = true;
 
 SerialConfig Settings::AuxConfig = { AUX_DEFAULT_BAUD_RATE, 8, 1, SerialConfig::PARITY_NONE };
@@ -121,6 +121,7 @@ void Settings::Init(void)
         if (sActiveRec->RecordVersion == SettingsRecord_V1::VERSION) {
             auto recV1 = (const SettingsRecord_V1 *)sActiveRec;
             SCLConfig = recV1->SCLConfig;
+            SCLConfig.StopBits = 2;
             SCLConfigFollowsUSB = recV1->SCLConfigFollowsUSB;
             AuxConfig = recV1->AuxConfig;
             AuxConfigFollowsUSB = recV1->AuxConfigFollowsUSB;
@@ -130,6 +131,7 @@ void Settings::Init(void)
         else if (sActiveRec->RecordVersion == SettingsRecord_V2::VERSION) {
             auto recV2 = (const SettingsRecord_V2 *)sActiveRec;
             SCLConfig = recV2->SCLConfig;
+            SCLConfig.StopBits = 2;
             SCLConfigFollowsUSB = recV2->SCLConfigFollowsUSB;
             AuxConfig = recV2->AuxConfig;
             AuxConfigFollowsUSB = recV2->AuxConfigFollowsUSB;
