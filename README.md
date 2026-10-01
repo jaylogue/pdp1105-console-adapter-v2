@@ -7,8 +7,8 @@ The *PDP-11/05 Console Adapter* is a hardware device which acts as a USB and RS-
 - **Direct connection to the SCL connector on the back of the PDP-11/05**
 - **USB-to-serial functionality, allowing access to the PDP-11 console from a modern terminal program**
 - **Auxiliary RS-232 interface for connecting a real serial terminal**
-- **External baud clock generator, allowing console data rates greater than 2400bps**
-- **Dynamically adjustable serial data rate and format (110 to 38400 bps, 8-N-1, 7-E-1, 7-O-1)**
+- **External baud clock generator, allowing console data rates greater than 2400 bps**
+- **Dynamically adjustable serial data rate and format (110 to 38400 bps, 8-N-2, 7-E-2, 7-O-2)**
 - **Virtual paper tape reader compatible with the 11/05's READER RUN signal**
 - **M9312/M9301 console loader that can directly load data into the PDP-11's memory using console commands**
 
@@ -45,13 +45,13 @@ I am happy to make assembled hardware or kits available to those enthusiasts who
 
 At the most basic level, the Console Adapter operates as a TTL-serial interface, connecting the PDP-11's console (also known as the Serial Communication Line or SCL port) to one of the Pico's internal UARTs. Level shifting circuitry in the adapter adjusts the PDP's 5V outputs to match the Pico's 3.3V inputs. Using USB software on the Pico, the adapter appears as a virtual COM port when connected to a host computer via USB, making it possible to use a standard terminal program (e.g. minicom, picocom or PuTTY) to interact with the PDP's console. In this way, the Console Adapter operates very similarly to an off-the-shelf USB-to-TTL serial device, with the exception that its behavior is fully customizable in software.
 
-The Console Adapter supports standard serial data rates in the range accepted by the PDP-11 (110 to 38400 bps). Internally, the CPU in the PDP-11/05 is hard-wired to use the 8-N-1 serial format. However, with appropriate software support on the PDP side, 7-E-1 or 7-O-1 formats can also be used (other formats are not supported). Based on this, the Console Adapter limits the choice of serial formats to these three combinations.
+The Console Adapter supports standard serial data rates in the range accepted by the PDP-11 (110 to 38400 bps). Internally, the CPU in the PDP-11/05 is hard-wired to use the 8-N-2 serial format. However, with appropriate software support on the PDP side, 7-E-2 or 7-O-2 formats can also be used (other formats are not supported). Based on this, the Console Adapter limits the SCL format to one of these three combinations.
 
 ### Baud Clock Generation
 
 The PDP-11/05 CPU includes a clock generator circuit which is used to generate the 16X clock signal needed to drive the internal console UART chip. Due to its simplicity, the internal generator limits the maximum usable data rate to 2400 bps. Conveniently, the PDP-11/05 provides a way to override the internal generator by providing an external clock signal on the SCL port. This allows the console to run at substantially higher data rates (theoretically up to 40000 bps).
 
-To enable higher data rates, the Console Adapter employs a PWM on the Pico to generate the necessary clock signal to drive the PDP's UART. The frequency of this clock signal is automatically adjusted to match the data rate of the Pico's UART, ensuring that the two systems are always in sync.
+To enable higher data rates, the Console Adapter employs a PWM peripheral on the Pico to generate the necessary clock signal to drive the PDP's UART. The frequency of this clock signal is automatically adjusted to match the data rate of the Pico's UART, ensuring that the two systems are always in sync.
 
 ### Auxiliary Terminal Interface
 
@@ -66,6 +66,8 @@ The data rate and serial format for the auxiliary terminal can be set independen
 The Console Adapter appears to the host computer as a standard USB COM device. As such, it is able to receive and process standard USB requests to change the serial configuration (also known as CDC Line Coding requests). This makes it possible to adjust the adapter's serial data rate and format directly from within terminal software running on the host.
 
 When the Console Adapter receives a Line Coding request it adjusts the configuration of the console UART and baud clock generator to match the requested data rate and serial format. Serial configuration changes happen on the fly and can be made at any time. If desired, the auxiliary terminal interface can also be set to automatically adjust to the new configuration.
+
+The PDP-11/05's SCL port is hard-wired to use 2 stop bits. This format is somewhat unusual in modern systems, and most terminal programs default to a format using 1 stop bit (usually 8-N-1). As a convenience to the user, the Console Adapter accepts USB Line Coding requests for 1 stop bit formats and internally translates them into the equivalent 2 stop bit format when configuring the SCL port.
 
 The choice to dynamically adjust the serial configuration based on a request from the host can be enabled or disabled independently for both the SCL and auxiliary terminal ports. When this feature is disabled, the serial configuration is controlled by a setting in the Console Adapter's settings menu. These settings are persisted in flash and survive adapter reboots.
 
@@ -92,7 +94,7 @@ Users can mount paper tape images on the virtual paper tape reader using the Con
 
 ### M9312/M9301 Console Loader
 
-On systems equipped with an M9312 or M9301 Bootstrap Module, the PDP-11/05 Console Adapter can be used to load data files directly into the PDP's memory using the UI provided by the bootstrap module's console ROM. Data is loaded by issuing a series of Load Address (L) and Deposit (D) commands and monitoring the responses received from the console. The loader automatically detects data files in Absolute Loader (LDA) format and arranges to load their contents at the correct memory offsets.
+On systems equipped with an M9312 or M9301 Bootstrap Terminator module, the PDP-11/05 Console Adapter can be used to load data files directly into the PDP's memory using the UI provided by the module's console ROM. Data is loaded by issuing a series of Load Address (L) and Deposit (D) commands and monitoring the responses received from the console. The loader automatically detects data files in Absolute Loader (LDA) format and arranges to load their contents at the correct memory offsets.
 
 The loader includes special support for loading the PDP-11 Bootstrap Loader (the code for which is built into the Console Adapter firmware). When requested to load the Bootstrap Loader, the Console Adapter will prompt the user for the memory size of the machine and adjust the software's load address and instruction contents automatically, following the rules described in the associated DEC documentation.
 
@@ -100,7 +102,7 @@ A similar feature is available for loading the Absolute Loader, which allows for
 
 ### On-device File Library
 
-The Console Adapter supports the ability to load frequently used paper tape images and other types of data files into the Pico's flash memory such that they are readily available for use when working with the PDP-11. A Python-based command line tool is provided that gathers a set of data files into a .uf2 file which then can be written to flash using one of the standard Pico firmware update processes (e.g. by dragging it onto the Pico's virtual disk). Once programmed in flash, files in the library are available for mounting on the virtual paper tape reader, or loading directly into memory using the M9312/M9301 console loader feature.
+The Console Adapter supports the ability to load frequently used paper tape images and other types of data files into the Pico's flash memory such that they are readily available for use when working with the PDP-11. A Python-based command line tool is provided that gathers a set of data files into a .uf2 file which can then be written to flash using one of the standard Pico firmware update processes (e.g. by dragging it onto the Pico's virtual disk). Once programmed in flash, files in the library are available for mounting on the virtual paper tape reader, or loading directly into memory using the M9312/M9301 console loader feature.
 
 1MiB of flash memory is available for file storage. Up to 36 files may be stored in this memory, with each file limited to a maximum of 128KiB.
 

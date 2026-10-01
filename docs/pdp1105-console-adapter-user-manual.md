@@ -45,13 +45,13 @@ The PDP-11/05 Console Adapter is a serial interface adapter for the console of a
 
 ## Hardware Overview
 
-The Console Adapter hardware consists of a Raspberry Pi Pico microcontroller, a MAX3232 RS-232 driver/receiver and a small amount of support circuitry. Most of the functionality of the Console Adapter is embodied in the Pico microcontroller. The remaining circuitry is largely concerned with adapting Pico to the voltage levels used by the PDP-11 and external terminals.
+The Console Adapter hardware consists of a Raspberry Pi Pico microcontroller, a MAX3232 RS-232 driver/receiver and a small amount of support circuitry. Most of the functionality of the Console Adapter is embodied in the Pico microcontroller. The remaining circuitry is largely concerned with adapting the Pico to the voltage levels used by the PDP-11 and external terminals.
 
 ### Interface Ports
 
 <img src="media/pdp1105-console-adapter-ports.png" width="512"/>
 
-The Console Adapter has 3 primary interfaces:
+The Console Adapter has three primary interfaces:
 
 - **USB port**: A female micro-USB connector for connecting to a host computer (located on the Pico microcontroller PCB).
 - **SCL port**: A 40-pin IDC connector for connecting to the PDP-11/05's SCL port.
@@ -82,9 +82,9 @@ _**CAUTION**: The Console Adapter is not internally isolated. As a consequence, 
 
 ### Connecting the Console Adapter to a PDP-11/05
 
-The Console Adapter must be connected to the PDP-11/05 using a 40-pin ribbon cable with 2x20 pin IDC connectors at each end. Generally speaking, this cable should be as short as possible, for signal integrity reasons. However, cables up to 6'/2m will probably work fine.
+The Console Adapter must be connected to the PDP-11/05 using a 40-pin ribbon cable with 2x20 pin IDC connectors at each end. Generally speaking, this cable should be as short as possible, for signal integrity reasons. However, cables up to 6 ft (2 m) will probably work fine.
 
-The SCP port on the PDP-11/05 predates modern connector standards. As such, it lacks the slot needed to accept the square registration "key" present on most modern ribbon cable connectors. Because of this, it is necessary to file off the registration key on one connector when making an SCL cable out of modern components.
+The SCL port on the PDP-11/05 predates modern connector standards. As such, it lacks the slot needed to accept the square registration "key" present on most modern ribbon cable connectors. Because of this, it is necessary to file off the registration key on one connector when making an SCL cable out of modern components.
 
 _**CAUTION**: The lack of the registration key on the SCL connector means that it is possible to connect the SCL cable to the PDP-11 in the wrong orientation. Therefore, **be especially careful to orient the SCL cable correctly when connecting it to the PDP-11**. In particular, the SCL cable connector should be positioned such that **pin 1 is towards the right-hand side of the PDP-11** when looking at the system from behind. On most ribbon cables, pin 1 can be identified by the presence of a small triangle on one side of the connector, or by the red stripe on one edge of the ribbon cable._
 
@@ -123,13 +123,13 @@ Note that, for USB COM devices like the Console Adapter, the serial configuratio
 
 It is possible to connect a standard RS-232 terminal (such as a classic DEC VT102) to the Console Adapter via its AUX port. An auxiliary terminal can be used in addition to, or instead of, a terminal emulator connected via the USB port.
 
-The Console Adapter's AUX port uses a standard DE9 female connector, with connections for Transmit Data (TD), Receive Data (RD) and Ground (GND). There is no support for hardware flow control signals (as is typical of DEC serial ports of the era).
+The Console Adapter's AUX port uses a standard DE-9 female connector, with connections for Transmit Data (TD), Receive Data (RD) and Ground (GND). There is no support for hardware flow control signals (as is typical of DEC serial ports of the era).
 
 By default, the AUX port is configured as a DCE device, making it possible to use a standard "straight-through" serial cable when connecting the Console Adapter to most terminals.
 
 A typical auxiliary terminal cable would be wired as follows:
 
-| Terminal End<br/>(DB25 -M or -F) | Console Adapter End<br/>(DE9-M) | Signal |
+| Terminal End<br/>(DB25 -M or -F) | Console Adapter End<br/>(DE-9-M) | Signal |
 |:-----:|:-----:|:-----:|
 | 2   | 3   | TD  |
 | 3   | 2   | RD  |
@@ -151,7 +151,7 @@ To validate the functionality of the Console Adapter a simple loopback test can 
 - Plug the adapter into a host computer via USB.
 - Start a terminal emulator program on the host computer and connect it to the Console Adapter.
 - Type characters into the terminal program and observe that the characters are echoed back correctly.
-- [Optional] Connect an auxiliary terminal to the AUX port, configured with the correct serial configuration. Verify correct echoing of characters via the auxiliary terminal.
+- [Optional] Connect an auxiliary terminal to the AUX port, configured with the correct serial settings. Verify correct echoing of characters via the auxiliary terminal.
 
 ### Updating the Console Adapter Firmware
 
@@ -163,7 +163,7 @@ The Console Adapter firmware can be updated by following the standard procedure 
 - After a moment, the virtual drive will disappear and the Console Adapter will reboot.
 - Once the device finishes booting, the new firmware is installed and ready for use.
 
-Note that it is also possible to update the Console Adapter firmware using the Raspberry Pi [picotool](https://github.com/raspberrypi/picotool) command-line tool. This approach can be more convenient in that it does not require pressing the BOOTSEL button. Prebuilt binaries for the picotool command are available online at the [Pico SDK Tools](https://github.com/raspberrypi/pico-sdk-tools) github page.
+Note that it is also possible to update the Console Adapter firmware using the Raspberry Pi [picotool](https://github.com/raspberrypi/picotool) command-line tool. This approach can be more convenient in that it does not require pressing the BOOTSEL button. Prebuilt binaries for the picotool command are available online at the [Pico SDK Tools](https://github.com/raspberrypi/pico-sdk-tools) GitHub page.
 
 To update the Console Adapter firmware using the picotool command, perform the following steps:
 
@@ -182,7 +182,7 @@ Upon boot, the Console Adapter automatically enters **Terminal Mode**. In Termin
 
 If an auxiliary terminal is connected to the AUX port, the adapter will also relay characters between the auxiliary terminal and the PDP-11. The USB and AUX ports can both be used simultaneously, and any characters output by the PDP-11 will be shown on both.
 
-By default, most characters are relayed without modification between the USB and AUX ports and the PDP-11's SCL port. An exception to this is the control key which is used to invoke Menu Mode (see below). Additionally, a special mode can be enabled that forces all characters sent to the PDP-11 to be uppercase (see [Enabling/Disabling Uppercase Mode](#enablingdisabling-uppercase-mode)).
+By default, most characters are relayed without modification between the USB and AUX ports and the PDP-11's SCL port. An exception to this is the menu key which is used to invoke Menu Mode (see below). Additionally, a special mode can be enabled that forces all characters sent to the PDP-11 to be uppercase (see [Enabling/Disabling Uppercase Mode](#enablingdisabling-uppercase-mode)).
 
 ### Menu Mode
 
@@ -280,7 +280,7 @@ To load an Absolute Loader (LDA) file, select the **Load file using M93xx consol
 >>> 
 ```
 
-Once a file has been selected, the Console Adapter will inspect the file to determine if it is in Absolute Loader (LDA) format. If it is, the adapter will use the addressing information encoded in the file to store the file's contents into the correct locations in memory.
+Once a file has been selected, the Console Adapter will inspect the file to determine if it is in Absolute Loader (LDA) format. If it is, the adapter will use the addressing information encoded in the file to place the file's contents at the correct locations in memory.
 
 If the file contains a program start address, the start address will be loaded into the console using the 'L' command as the final step of the loading process. This makes it convenient to start the program by entering an 'S' command.
 
@@ -303,7 +303,7 @@ Loading a simple (non-LDA) data file is similar to loading an LDA file. Select t
 >>> 
 ```
 
-If the file selected is a simple data file, the Console Adapter will prompt to enter a load address:
+If the file selected is a simple data file, the Console Adapter will prompt for a load address:
 
 ```
 >>> INPUT LOAD ADDRESS (in octal) : 0
@@ -351,7 +351,7 @@ Note that, while traditionally the Bootstrap Loader is used as the first step in
 
 ### Loading the Absolute Loader
 
-The Console Adapter provides the ability to load the PDP-11 Absolute Loader directly into memory using the M9312/M9301 console. This makes it possible to bypass the step of entering and running the Bootstrap Loader. Technically, when operated this way, the Console Adapter loads both the Absolute Loader and the Bootstrap Loader in one step. This ensures that system memory is arranged the same as if the Bootstrap Loader had been loaded as a separate step.
+The Console Adapter provides the ability to load the PDP-11 Absolute Loader directly into memory using the M9312/M9301 console. This makes it possible to bypass the step of entering and running the Bootstrap Loader. Technically, when operated this way, the Console Adapter loads both the Absolute Loader and the Bootstrap Loader in one step. This ensures that system memory is arranged the same way as if the Bootstrap Loader had been loaded as a separate step.
 
 To load the Absolute Loader directly, select the **Absolute Loader** option from the Load File menu (key sequence: `CTRL+^ l A`). Once selected, the Console Adapter will prompt for the system memory size:
 
@@ -373,7 +373,7 @@ The Console Adapter provides a number of options for controlling its behavior. T
 
 ```
 *** SETTINGS MENU:
-  s) Default SCL config....9600-8-N-1  a) Default Aux config....9600-8-N-1
+  s) Default SCL config....9600-8-N-2  a) Default Aux config....9600-8-N-1
   S) SCL follows USB...............on  A) Aux follows USB..............off
   p) Show PTR progress.............on  u) Uppercase mode...............off
   -----
@@ -388,9 +388,9 @@ Changes made to settings via the settings menu are persisted in the adapter's fl
 
 The Console Adapter includes a baud clock generator which allows it to dynamically adjust the speed of the PDP-11/05's SCL port. While in Terminal Mode, the adapter listens for requests from the attached USB host to change the serial configuration. These requests are known as *CDC Line Coding Requests* in USB parlance. Most terminal emulator programs, such as PuTTY or minicom, provide a way to send serial configuration requests using a key sequence or menu option.
 
-When the adapter receives a serial configuration change request, it automatically adjusts the SCL port to match the requested configuration, provided the request is for a configuration supported by the PDP-11/05. The Console Adapter supports all standard serial bit rates in the range 110 to 38400 (which is effectively the range supported by the PDP-11/05 UART hardware). Serial bit formats are limited to 8-N-1, 7-E-1 and 7-O-1, as these are the only ones that may be used on the PDP-11/05.
+When the adapter receives a serial configuration change request, it automatically adjusts the SCL port to match the requested configuration, provided the requested configuration is supported. The Console Adapter supports all standard serial bit rates in the range 110 to 38400 (the range supported by the PDP-11/05 hardware). Supported serial formats for the SCL port are 8-N-2, 7-E-2 and 7-O-2. For compatibility with modern terminal emulators, the Console Adapter will also accept serial formats 8-N-1, 7-E-1 and 7-O-1, and will translate these to their 2 stop bit equivalents internally.
 
-Note that most terminal emulators will issue a request to change the serial configuration as soon as they connect to a USB COM device. The effect of this is that the SCL port's configuration will snap to whatever configuration is the default for the terminal emulator at the time it is started.
+Note that most terminal emulators issue a request to change the serial configuration as soon as they connect to a USB COM device. The effect of this is that the SCL port's configuration will snap to whatever configuration is the default for the terminal emulator at the time it is started. For many terminal programs, this is 9600 8-N-1.
 
 By default, the Console Adapter is pre-configured to listen and react to serial change requests from the USB host. This feature can be disabled by changing the **SCL follows USB** setting to **off** in the **Settings Menu** (key sequence: `CTRL+^ S S`). When this setting is off, the adapter will always use the default SCL port configuration set in the Settings Menu (see below).
 
@@ -398,7 +398,7 @@ By default, the Console Adapter is pre-configured to listen and react to serial 
 
 If there is no USB connection when the Console Adapter boots, the adapter will configure the SCL port using default settings stored in its persistent memory. This allows the selection of a particular serial configuration without needing to attach a USB host (e.g., when using the adapter with an auxiliary terminal only).
 
-The default SCL configuration is preset to 9600-8-N-1, which is a reasonable configuration for most PDP-11 software.
+The default SCL configuration is preset to 9600-8-N-2, which is a reasonable configuration for most PDP-11 software.
 
 The default configuration can be changed by selecting the **Default SCL config** option in the **Settings Menu** (key sequence: `CTRL+^ S s`). This will display the Port Configuration Menu:
 
@@ -408,11 +408,11 @@ The default configuration can be changed by selecting the **Default SCL config**
   1) 300    4) 2400   7) 19200
   2) 600    5) 4800   8) 38400
   -----
-  a) 8-N-1  b) 7-E-1  c) 7-O-1
+  a) 8-N-2  b) 7-E-2  c) 7-O-2
   -----
   ENTER) Accept    ESC) Abort
 
->>> 9600-8-N-1
+>>> 9600-8-N-2
 ```
 
 The current serial configuration is shown after the prompt. Selecting the various menu options will adjust the bit rate and/or serial format accordingly. Pressing *ENTER* will accept the new configuration, while pressing *ESC* will discard it.
@@ -454,7 +454,7 @@ The current status of the Console Adapter can be viewed by selecting the **Adapt
 
 ```
 *** ADAPTER STATUS:
-  SCL Port: 9600-8-N-1 (default), connected
+  SCL Port: 9600-8-N-2 (default), connected
   Aux Port: 9600-8-N-1 (default)
   Paper Tape Reader: PDP-11 BASIC (AJPB-PB)
   Position: 9300/10170 (91%)
@@ -512,4 +512,4 @@ Once a new file library image has been created, the process to flash the library
 
 Copyright 2025 Jay Logue
 
-All documentation for the PDP-11/05 Console Adapter V2, including images, schematics, PCB designs and this manual, are licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
+All documentation for the PDP-11/05 Console Adapter V2, including images, schematics, PCB designs and this manual, is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
