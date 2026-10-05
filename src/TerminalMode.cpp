@@ -20,17 +20,30 @@
 #include "Settings.h"
 #include "PTRProgressBar.h"
 
+bool gTransparentMode;
+
 static void HandleHostSerialConfigChange(void);
 
 void TerminalMode(void)
 {
     char ch;
     Port *uiPort, *lastUIPort = &gHostPort;
+    bool pdp11Powered = false;
     
     while (true) {
 
-        // Update the connection status of the SCL port
-        gSCLPort.CheckConnected();
+        // Update the status of the SCL port
+        gSCLPort.UpdateState();
+
+        // Track the power state of the PDP-11; on a transition from
+        // powered to unpowered, clear transparent mode, if enabled.
+        if (gSCLPort.IsPowered()) {
+            pdp11Powered = true;
+        }
+        else if (pdp11Powered) {
+            pdp11Powered = false;
+            gTransparentMode = false;
+        }
 
         // Handle requests from the USB host to change the serial configuration.
         if (gHostPort.ConfigChanged()) {
@@ -51,8 +64,9 @@ void TerminalMode(void)
         // Process characters received from either the USB host or the auxiliary terminal.
         if (gSCLPort.CanWrite() && TryReadHostAuxPorts(ch, uiPort)) {
 
-            // If the menu key was pressed enter menu mode
-            if (ch == MENU_KEY) {
+            // If not in transparent mode and the menu key was pressed,
+            // enter menu mode
+            if (!gTransparentMode && ch == MENU_KEY) {
                 PTRProgressBar::Clear();
                 MenuMode(*uiPort);
             }
@@ -60,8 +74,9 @@ void TerminalMode(void)
             // Otherwise forward the character to the SCL port...
             else {
 
-                // Convert character to uppercase if in Uppercase Mode
-                if (Settings::UppercaseMode) {
+                // If in uppercase mode and NOT in transparent mode, convert the
+                // character to uppercase before forwarding it.
+                if (!gTransparentMode && Settings::UppercaseMode) {
                     ch = toupper(ch);
                 }
 

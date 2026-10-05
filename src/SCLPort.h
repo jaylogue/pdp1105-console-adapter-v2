@@ -31,9 +31,11 @@ public:
     void Init(void);
     const SerialConfig& GetConfig(void);
     void SetConfig(const SerialConfig& serialConfig);
-    bool CheckConnected(void);
+    bool IsConnected(void);
+    bool IsPowered(void);
     bool ReaderRunRequested(void);
     void ClearReaderRunRequested(void);
+    void UpdateState(void);
 
     virtual char Read(void);
     virtual bool TryRead(char &ch);
@@ -42,9 +44,12 @@ public:
     virtual void Flush(void);
     virtual bool CanWrite(void);
 
+    static constexpr uint32_t kUnpoweredTimeoutUS = 250000;
+
 private:
     static SerialConfig sConfig;
     static bool sReaderRunRequested;
+    static uint64_t sRXInactiveTime;
 
     static void ConfigSCLClock(uint32_t bitRate);
     static void HandleReaderRunIRQ(void);
@@ -70,6 +75,7 @@ inline void SCLPort::ClearReaderRunRequested(void)
 inline char SCLPort::Read(void)
 {
     char ch = uart_getc(SCL_UART);
+    sRXInactiveTime = 0;
     ActivityLED::TxActive();
     ActivityLED::SysActive();
     return ch;
@@ -79,6 +85,7 @@ inline bool SCLPort::TryRead(char& ch)
 {
     if (uart_is_readable(SCL_UART)) {
         ch = uart_getc(SCL_UART);
+        sRXInactiveTime = 0;
         ActivityLED::TxActive();
         ActivityLED::SysActive();
         return true;

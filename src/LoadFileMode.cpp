@@ -31,8 +31,8 @@ void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
         // Update the state of the activity LEDs
         ActivityLED::UpdateState();
 
-        // Update the connection status of the SCL port
-        gSCLPort.CheckConnected();
+        // Update the status of the SCL port
+        gSCLPort.UpdateState();
 
         // Process any timeouts while talking to the M9301/M9312 console;
         // If the console is unresponsive, abort and return to terminal mode.

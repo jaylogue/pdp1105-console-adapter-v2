@@ -42,7 +42,9 @@ static char SelectFile(Port& uiPort, const char * title, bool includeBootstrap);
 static const Menu * BuildFileMenu(const char * title, bool includeBootstrap);
 static void SettingsMenu(Port& uiPort);
 static void DiagMenu(Port& uiPort);
+static void EnableTransparentMode(Port& uiPort);
 static bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW);
+static bool GetYesNo(Port& uiPort, bool& val, bool defaultVal);
 static bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal = UINT32_MAX);
 static bool GetSerialConfig(Port& uiPort, const char * title, SerialConfig& serialConfig, bool sclPort = false);
 static bool GetShowPTRProgress(Port& uiPort, Settings::ShowPTRProgress_t& showProgressBar);
@@ -60,8 +62,9 @@ void MenuMode(Port& uiPort)
         { 'S', "Adapter settings"               },
         { 'v', "Adapter version"                },
         MenuItem::SEPARATOR(),
-        { '\e', "Return to terminal mode"        },
+        { '\e', "Return to terminal mode"       },
         { MENU_KEY, "Send menu character"       },
+        { 'T', "Enter transparent mode"         },
         MenuItem::HIDDEN(CTRL_C),
         MenuItem::HIDDEN(CTRL_D),
         MenuItem::END()
@@ -97,6 +100,9 @@ void MenuMode(Port& uiPort)
         break;
     case 'v':
         AdapterVersion(uiPort);
+        break;
+    case 'T':
+        EnableTransparentMode(uiPort);
         break;
     case CTRL_D:
         DiagMenu(uiPort);
@@ -161,12 +167,13 @@ void AdapterStatus(Port& uiPort)
 
     uiPort.Write("\r\n" TITLE_PREFIX "ADAPTER STATUS:\r\n");
 
-    uiPort.Printf("  SCL Port: %s (%s), %s\r\n",
+    uiPort.Printf("  SCL Port: %s (%s), %s, %s\r\n",
         ToString(gSCLPort.GetConfig(), buf, sizeof(buf)),
         (Settings::SCLConfigFollowsUSB && gSCLPort.GetConfig() != Settings::SCLConfig) 
             ? "set via USB"
             : "default",
-        gSCLPort.CheckConnected() ? "connected" : "disconnected"
+        gSCLPort.IsConnected() ? "connected" : "disconnected",
+        gSCLPort.IsPowered() ? "powered" : "unpowered"
     );
 
     uiPort.Printf("  AUX Port: %s (%s)\r\n",
@@ -519,6 +526,23 @@ void DiagMenu(Port& uiPort)
     }
 }
 
+void EnableTransparentMode(Port& uiPort)
+{
+    uiPort.Printf(
+        "\r\n"
+        TITLE_PREFIX "TRANSPARENT MODE:\r\n"
+        "\r\n"
+        "Transparent mode passes all characters, including the menu key (CTRL+%c),\r\n"
+        "through to the PDP-11 unmodified.\r\n"
+        "\r\n"
+        "To exit transparent mode, power-cycle the PDP-11.\r\n"
+        "\r\n"
+        INPUT_PROMPT "Enable transparent mode? (y/n): ",
+        MENU_KEY + 0x40);
+
+     GetYesNo(uiPort, gTransparentMode, false);
+}
+
 bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW)
 {
     static uint32_t sDefaultMemSizeKW = 28;
@@ -533,6 +557,60 @@ bool GetSystemMemorySize(Port& uiPort, uint32_t& memSizeKW)
     sDefaultMemSizeKW = memSizeKW;
 
     return true;
+}
+
+bool GetYesNo(Port& uiPort, bool& val, bool defaultVal)
+{
+    char ch;
+    bool defaultCleared = false;
+
+    // Display the default value
+    uiPort.Write(defaultVal ? "y" : "n");
+    uiPort.Write(BS);
+
+    while (true) {
+        // Update the state of the activity LEDs
+        ActivityLED::UpdateState();
+
+        // Update the status of the SCL port
+        gSCLPort.UpdateState();
+
+        // Read and process a character if available...
+        if (uiPort.TryRead(ch)) {
+            switch (ch) {
+            case 'Y':
+            case 'y':
+                uiPort.Write(ch);
+                uiPort.Write("\r\n");
+                val = true;
+                return true;
+            case 'N':
+            case 'n':
+                uiPort.Write(ch);
+                uiPort.Write("\r\n");
+                val = false;
+                return true;
+            case '\r':
+                if (!defaultCleared) {
+                    uiPort.Write("\r\n");
+                    val = defaultVal;
+                    return true;
+                }
+                break;
+            case CTRL_C:
+                uiPort.Write("^C\r\n");
+                return false;
+            case '\e':
+                uiPort.Write("ESC\r\n");
+                return false;
+            default:
+                uiPort.Write("?");
+                uiPort.Write(BS);
+                defaultCleared = true;
+                break;
+            }
+        }
+    }
 }
 
 bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal)
@@ -554,8 +632,8 @@ bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal)
         // Update the state of the activity LEDs
         ActivityLED::UpdateState();
 
-        // Update the connection status of the SCL port
-        gSCLPort.CheckConnected();
+        // Update the status of the SCL port
+        gSCLPort.UpdateState();
 
         // Read and process a character if available...
         if (uiPort.TryRead(ch)) {

@@ -24,6 +24,7 @@ SCLPort gSCLPort;
 
 SerialConfig SCLPort::sConfig = { SCL_DEFAULT_BAUD_RATE, 8, 2, SerialConfig::PARITY_NONE };
 bool SCLPort::sReaderRunRequested;
+uint64_t SCLPort::sRXInactiveTime;
 
 void SCLPort::Init(void)
 {
@@ -93,23 +94,54 @@ void SCLPort::SetConfig(const SerialConfig& serialConfig)
     ConfigSCLClock(serialConfig.BitRate);
 }
 
-bool SCLPort::CheckConnected(void)
+bool SCLPort::IsConnected(void)
 {
-    bool connected = gpio_get(SCL_DETECT_PIN);
+    return gpio_get(SCL_DETECT_PIN);
+}
 
-    // While the console adapter is connected to the PDP-11's SCL port,
-    // configure the SCL UART TX pin to output serial data in inverted format 
-    // When the console adapter is not connected to the SCL port, use normal
-    // TX signaling.
+bool SCLPort::IsPowered(void)
+{
+    // The PDP-11 is powered if the RX pin is currently active, or if
+    // the RX pin has been inactive for less than kUnpoweredTimeoutUS.
+    return sRXInactiveTime == 0 || time_us_64() < (sRXInactiveTime + kUnpoweredTimeoutUS);
+}
+
+void SCLPort::UpdateState(void)
+{
+    // The PDP-11/05 SCL port expects the SERIAL IN (TTL) signal (pin
+    // RR/36) to use inverted signaling (i.e. 0V = MARK, +V = SPACE).
+    // However, when the console adapter is not connected to the SCL
+    // port, it is convenient to use normal signaling so that a
+    // loopback test can be performed by jumpering pins RR/36 and D/04
+    // on SCL connector.
+
+    // If the console adapter is connected to the PDP-11's SCL port,
+    // configure the SCL UART TX pin to output serial data in inverted
+    // format. Otherwise, use normal TX signaling.
+    gpio_set_outover(SCL_UART_TX_PIN, IsConnected() ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
+
+    // The power state of the PDP-11 is determined by monitoring
+    // activity on the SCL UART RX pin. If the RX pin is active
+    // (high), then the PDP-11 has power. If the RX pin is inactive
+    // (low), it could mean: 1) the PDP-11 is unpowered, or 2) the
+    // SCL UART is receiving a character.
     //
-    // The PDP-11/05 SCL port expects the SERIAL IN (TTL) signal (pin RR/36)
-    // to use inverted signaling (i.e. 0V = MARK, +V = SPACE).  However,
-    // when the console adapter is not connected to the SCL port, it is
-    // convenient to use normal signaling so that a loopback test can be
-    // performed by jumpering pins RR/36 and D/04 on SCL connector.
-    gpio_set_outover(SCL_UART_TX_PIN, connected ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
+    // To differentiate the two cases, the code tracks how long the
+    // RX pin stays inactive. If the RX pin is inactive for an
+    // extended period (kUnpoweredTimeoutUS), and no characters are
+    // received during that period, then the PDP-11 is considered
+    // to be unpowered.
 
-    return connected;
+    // Check the current state of the SCL UART RX pin.
+    // If the RX pin is active (high), implying then the PDP-11 has
+    // power, then clear the RX inactive time. Otherwise, mark the
+    // time at which the RX pin was first observed to be inactive.
+    if (gpio_get(SCL_UART_RX_PIN)) {
+        sRXInactiveTime = 0;
+    }
+    else if (sRXInactiveTime == 0) {
+        sRXInactiveTime = time_us_64();
+    }
 }
 
 void SCLPort::ConfigSCLClock(uint32_t bitRate)

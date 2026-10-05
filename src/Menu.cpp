@@ -110,8 +110,8 @@ char Menu::GetSelection(Port& uiPort, const char * prompt, bool echoSel, bool ne
         // Update the state of the activity LEDs
         ActivityLED::UpdateState();
 
-        // Update the connection status of the SCL port
-        gSCLPort.CheckConnected();
+        // Update the status of the SCL port
+        gSCLPort.UpdateState();
 
         // Wait until a character is available from the UI port
         if (!uiPort.TryRead(ch)) {
