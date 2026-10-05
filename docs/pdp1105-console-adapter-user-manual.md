@@ -14,6 +14,7 @@
 - [Basic Operation](#basic-operation)
   - [Terminal Mode](#terminal-mode)
   - [Menu Mode](#menu-mode)
+  - [Transparent Mode](#transparent-mode)
 - [Virtual Paper Tape Reader](#virtual-paper-tape-reader)
   - [Mounting a Paper Tape Image](#mounting-a-paper-tape-image)
   - [Unmounting a Paper Tape Image](#unmounting-a-paper-tape-image)
@@ -196,9 +197,10 @@ To enter Menu Mode from Terminal Mode press the menu key: `CTRL+^` (Control Shif
   u) Unmount paper tape         S) Adapter settings
   s) Adapter status             v) Adapter version
   -----
-  ESC) Return to terminal mode  CTRL+^) Send menu character
+  ESC) Return to terminal mode  T) Enter transparent mode
+  CTRL+^) Send menu character
 
->>>
+>>> 
 ```
 
 While in Menu Mode, requests for user input are indicated by a `>>>` prompt. Menu choices are made by pressing the single (case sensitive) key shown before each menu option.
@@ -208,6 +210,17 @@ In most contexts, pressing `ESC` or `CTRL+C` will exit Menu Mode and return the 
 Pressing `CTRL+^` from the Main Menu will send the menu key character to the PDP-11.
 
 Menu Mode can be entered from either the USB port or the AUX port. The menu UI only displays on the port from which it was invoked.
+
+### Transparent Mode
+
+The Console Adapter provides a mode where all characters, including the menu character (`CTRL+^`), are
+relayed to the PDP-11 without modification. Transparent mode is useful when transmitting binary data
+to the PDP-11 that might contain instances of the menu character. While in Transparent Mode, it is not
+possible to access the Console Adapter's menus.
+
+To enter Transparent Mode, choose the **Enter transparent mode** option from the Main Menu (key sequence: `CTRL+^ T`).
+
+To exit Transparent Mode, power-cycle the PDP-11, or reboot the Console Adapter.
 
 ## Virtual Paper Tape Reader
 
@@ -446,7 +459,9 @@ Whenever the PDP-11 requests a character from the virtual paper tape reader, the
 
 The Console Adapter can be placed in a mode where all characters forwarded to the SCL port in Terminal Mode are converted to uppercase first. This mode is useful when working with PDP-11 software, such as PDP-11 Paper Tape BASIC, which requires the user to enter uppercase characters only. It is more convenient than using the keyboard's caps lock key in that only characters sent to the PDP-11 are converted, and the keyboard remains in non-caps lock mode while interacting with the Console Adapter's menus or other programs on the host computer.
 
-Uppercase mode can be toggled on or off by selecting the **Uppercase mode** option in the Settings Menu (key sequence: `CTRL+^ S u`).
+Uppercase Mode can be toggled on or off by selecting the **Uppercase mode** option in the Settings Menu (key sequence: `CTRL+^ S u`).
+
+Uppercase Mode is suspended while the Console Adapter is in **[Transparent Mode](#transparent-mode)**.
 
 ## Adapter Status
 
