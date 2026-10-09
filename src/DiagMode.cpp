@@ -14,19 +14,27 @@
  * limitations under the License.
  */
 
+#include <stdint.h>
+#include <inttypes.h>
+
 #include "ConsoleAdapter.h"
 #include "Settings.h"
 #include "Menu.h"
 
 void DiagMode_BasicIOTest(Port& uiPort)
 {
-    char ch, lastSent = 0, lastRcvd = 0;
-    uint32_t mismatchCount = 0;
-    uint64_t nextSendTime = 0;
-    bool paused = false;
-    constexpr uint64_t kMaxSendIntervalUS = 500000;
+    char ch;
+    uint32_t lastSent = 0, lastRcvd = 0, mismatchCount = 0, lastMismatchCh = 0, lastMismatchExpected = 0;
+    uint64_t nextSendTime = 0, nextStatusTime = 0;
+    int lastStatusLen = 0;
+    bool paused = false, pauseOnError = false, updateStatus = false;
+    constexpr uint32_t kBitsPerChar = 11; // 1 start bit + 8 data bits + 2 stop bits
+    constexpr uint32_t kStatusIntervalUS = 100000;
 
-    uiPort.Write(
+    const uint32_t bitRate = gSCLPort.GetConfig().BitRate;
+    const uint32_t sendIntervalUS = ((kBitsPerChar * 1000000) + (bitRate - 1)) / bitRate;
+
+    uiPort.Printf(
         TITLE_PREFIX "BASIC I/O TEST\r\n"
         "\r\n"
         "Repeatedly send characters and verify that each character is echoed.\r\n"
@@ -43,14 +51,18 @@ void DiagMode_BasicIOTest(Port& uiPort)
         "  001016: 000006\r\n"
         "  001020: 000771           br waitrx       ; loop\r\n"
         "\r\n"
-        "SPACE to pause/resume test\r\n"
-        "Ctrl+C to exit test\r\n"
+        "SCL Bit Rate: %" PRIu32 "\r\n"
+        "Character Send Interval: %" PRIu32 " us\r\n"
         "\r\n"
+        "SPACE to pause/resume test\r\n"
+        "P to pause on error\r\n"
+        "Ctrl+C to exit test\r\n"
+        "\r\n",
+        bitRate,
+        sendIntervalUS
     );
 
     while (true) {
-        bool updateStatus = false;
-
         // Update the state of the activity LEDs
         ActivityLED::UpdateState();
 
@@ -62,35 +74,52 @@ void DiagMode_BasicIOTest(Port& uiPort)
             }
             if (ch == ' ') {
                 paused = !paused;
-                updateStatus = true;
+            }
+            else if (ch == 'p' || ch == 'P') {
+                pauseOnError = !pauseOnError;
             }
         }
 
         // Send character to PDP-11
         if (time_us_64() >= nextSendTime && !paused) {
-            if (nextSendTime != 0 && lastRcvd != lastSent) {
-                mismatchCount++;
-            }
-            lastSent++;
-            gSCLPort.Write(lastSent);
-            nextSendTime = time_us_64() + kMaxSendIntervalUS;
+            lastSent = (lastSent + 1) & 0xFF;
+            gSCLPort.Write((char)lastSent);
+            nextSendTime = time_us_64() + sendIntervalUS;
             updateStatus = true;
         }
 
-        // Receive character from PDP-11 and check against last sent character
-        if (gSCLPort.TryRead(lastRcvd)) {
-            if (lastRcvd == lastSent) {
-                nextSendTime = 0; // send next character immediately
-            }
-            else {
+        // Receive character from PDP-11 and check against last received character
+        if (gSCLPort.TryRead(ch)) {
+            uint32_t expected = (lastRcvd + 1) & 0xFF;
+            if ((uint32_t)ch != expected) {
                 mismatchCount++;
+                lastMismatchCh = (uint32_t)ch;
+                lastMismatchExpected = expected;
+                if (pauseOnError) {
+                    paused = true;
+                }
             }
+            lastRcvd = (uint32_t)ch;
             updateStatus = true;
         }
 
-        if (updateStatus) {
-            uiPort.Printf("\rLast Sent: %3d, Last Rcvd: %3d, Mismaches: %d", 
-                lastSent, lastRcvd, mismatchCount);
+        // Print status
+        if (updateStatus && (time_us_64() >= nextStatusTime || paused)) {
+            int len = uiPort.Printf("\rLast Sent: %3" PRIu32 ", Last Rcvd: %3" PRIu32, lastSent, lastRcvd);
+            if (mismatchCount > 0) {
+                len += uiPort.Printf(", Mismaches: %4" PRIu32 " (Expected: %3" PRIu32 ", Got: %3" PRIu32 ", Xor: 0x%02" PRIX32 ")",
+                    mismatchCount, lastMismatchExpected, lastMismatchCh, lastMismatchExpected ^ lastMismatchCh);
+            }
+            if (paused) {
+                len += uiPort.Printf(" PAUSED");
+            }
+            while (len < lastStatusLen) {
+                uiPort.Write(' ');
+                lastStatusLen--;
+            }
+            lastStatusLen = len;
+            nextStatusTime = time_us_64() + kStatusIntervalUS;
+            updateStatus = false;
         }
     }
 }
