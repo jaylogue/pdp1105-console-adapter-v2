@@ -31,6 +31,7 @@ public:
     void Init(void);
     const SerialConfig& GetConfig(void);
     bool ConfigChanged(void);
+    bool IsConnected(void);
 
     virtual char Read(void);
     virtual bool TryRead(char &ch);
@@ -44,6 +45,11 @@ private:
 };
 
 extern HostPort gHostPort;
+
+inline bool HostPort::IsConnected(void)
+{
+    return stdio_usb_connected();
+}
 
 inline char HostPort::Read(void)
 {

@@ -34,6 +34,11 @@ void LoadFileMode(Port& uiPort, LoadDataSource& dataSrc, const char * fileName)
         // Update the status of the SCL port
         gSCLPort.UpdateState();
 
+        // If talking to the HostPort, and there is no USB host connected, abort.
+        if (&uiPort == &gHostPort && !gHostPort.IsConnected()) {
+            break;
+        }
+
         // Process any timeouts while talking to the M9301/M9312 console;
         // If the console is unresponsive, abort and return to terminal mode.
         if (m93xxCtr.ProcessTimeouts()) {

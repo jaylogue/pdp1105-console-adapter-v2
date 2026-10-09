@@ -149,6 +149,7 @@ void MountPaperTape(Port& uiPort)
         break;
     case CTRL_C:
     case '\e':
+    case 0:
         return;
     default:
         FileLib::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
@@ -250,6 +251,7 @@ void LoadFile(Port& uiPort)
         break;
     case CTRL_C:
     case '\e':
+    case 0:
         break;
     default:
         FileLib::GetFile(SelectorToFileIndex(sel), fileName, fileData, fileLen);
@@ -575,6 +577,11 @@ bool GetYesNo(Port& uiPort, bool& val, bool defaultVal)
         // Update the status of the SCL port
         gSCLPort.UpdateState();
 
+        // If talking to the HostPort, and there is no USB host connected, abort input.
+        if (&uiPort == &gHostPort && !gHostPort.IsConnected()) {
+            return false;
+        }
+
         // Read and process a character if available...
         if (uiPort.TryRead(ch)) {
             switch (ch) {
@@ -634,6 +641,11 @@ bool GetInteger(Port& uiPort, uint32_t& val, unsigned base, uint32_t defaultVal)
 
         // Update the status of the SCL port
         gSCLPort.UpdateState();
+
+        // If talking to the HostPort, and there is no USB host connected, abort input.
+        if (&uiPort == &gHostPort && !gHostPort.IsConnected()) {
+            return false;
+        }
 
         // Read and process a character if available...
         if (uiPort.TryRead(ch)) {

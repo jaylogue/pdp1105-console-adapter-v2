@@ -54,6 +54,11 @@ bool UploadFileMode(Port& uiPort)
         // Update the state of the activity LEDs
         ActivityLED::UpdateState();
 
+        // If the transfer is over the HostPort, and there is no USB host connected, abort.
+        if (&uiPort == &gHostPort && !gHostPort.IsConnected()) {
+            return false;
+        }
+
         // If a character is availabled from the sender...
         if (uiPort.TryRead(ch)) {
 

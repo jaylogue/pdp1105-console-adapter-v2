@@ -113,6 +113,12 @@ char Menu::GetSelection(Port& uiPort, const char * prompt, bool echoSel, bool ne
         // Update the status of the SCL port
         gSCLPort.UpdateState();
 
+        // If talking to the HostPort, and there is no USB host connected, 
+        // return nul.
+        if (&uiPort == &gHostPort && !gHostPort.IsConnected()) {
+            return (char)0;
+        }
+
         // Wait until a character is available from the UI port
         if (!uiPort.TryRead(ch)) {
             continue;
